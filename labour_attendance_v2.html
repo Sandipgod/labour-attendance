@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Labour Attendance Register</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#0b1220;
+  --bg1:#0a2a24;
+  --card:#ffffff;
+  --muted:#6b7280;
+  --text:#0f172a;
+  --brand:#0F6E56;
+  --brand2:#1D9E75;
+  --danger:#993C1D;
+  --warn:#854F0B;
+  --info:#185FA5;
+  --line:rgba(15, 23, 42, 0.10);
+  --shadow:0 14px 40px rgba(2, 6, 23, 0.10);
+}
+html,body{height:100%}
+body{
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,'Segoe UI', sans-serif;
+  background: radial-gradient(1200px 700px at 20% -10%, rgba(29,158,117,0.22), transparent 60%),
+              radial-gradient(900px 600px at 90% 10%, rgba(56,189,248,0.18), transparent 55%),
+              linear-gradient(180deg, #f8fafc, #f1f5f9);
+  color:var(--text);
+  min-height:100vh
+}
+.app, .auth{padding-bottom:env(safe-area-inset-bottom)}
+.header{padding-top:calc(14px + env(safe-area-inset-top))}
+.tabs{top:calc(61px + env(safe-area-inset-top))}
+.section{padding:16px}
+@media (max-width:420px){
+  .section{padding:14px}
+}
+button,input,select,textarea{touch-action:manipulation}
+button{min-height:44px}
+.tab{min-height:44px}
+.date-nav button{min-height:38px}
+.sync-btn,.logout-btn,.export-btn{min-height:38px}
+input,select,textarea{font-size:16px} /* prevent iOS zoom */
+.worker-card{padding:14px}
+.att-btn{min-height:42px}
+.ot-input,.adv-input{min-height:38px}
+.note-input{min-height:40px}
+.month-sel{gap:10px}
+.month-sel select{min-height:42px}
+.print-btn{min-height:48px}
+.tbl-card{overflow:auto;-webkit-overflow-scrolling:touch}
+.tbl{min-width:360px}
+.toast{bottom:calc(24px + env(safe-area-inset-bottom))}
+.app{
+  max-width:480px;
+  margin:0 auto;
+  padding:0 0 92px;
+  background:rgba(255,255,255,0.70);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  min-height:100vh;
+  box-shadow:var(--shadow);
+  border-left:1px solid rgba(255,255,255,0.55);
+  border-right:1px solid rgba(255,255,255,0.55);
+}
+.header{
+  background:rgba(255,255,255,0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom:1px solid var(--line);
+  padding:14px 16px;
+  position:sticky;top:0;z-index:100
+}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;font-weight:800;letter-spacing:-0.2px;color:var(--brand)}
+.user-chip{display:flex;align-items:center;gap:8px}
+.user-name{font-size:12px;color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logout-btn{padding:6px 10px;font-size:12px;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:10px;cursor:pointer}
+.logout-btn:hover{background:#f8fafc}
+.sync-btn{padding:6px 14px;font-size:12px;font-weight:500;border:1.5px solid #1D9E75;color:#0F6E56;background:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.15s}
+.sync-btn:hover{background:#E1F5EE}
+.sync-btn.syncing{opacity:0.5;pointer-events:none}
+.sync-status{font-size:11px;color:#888;margin-top:3px}
+.sync-status.ok{color:#0F6E56}
+.sync-status.err{color:#c0392b}
+.tabs{display:flex;border-bottom:1px solid var(--line);background:rgba(255,255,255,0.75);backdrop-filter: blur(10px);-webkit-backdrop-filter: blur(10px);position:sticky;top:61px;z-index:99}
+.tab{flex:1;padding:11px 4px;font-size:13px;font-weight:400;color:#888;border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;transition:all 0.15s}
+.tab.active{color:#0F6E56;border-bottom-color:#0F6E56;font-weight:600}
+.section{padding:16px;display:none}
+.section.active{display:block}
+.date-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.date-nav{display:flex;align-items:center;gap:6px}
+.date-nav button{border:1px solid #ddd;background:#fff;color:#333;cursor:pointer;padding:5px 12px;border-radius:8px;font-size:15px;transition:all 0.15s}
+.date-nav button:hover{background:#f0f0eb}
+.date-label{font-size:14px;font-weight:600;color:#1a1a1a}
+.bulk-row{display:flex;gap:6px;margin-bottom:14px}
+.bulk-btn{flex:1;padding:8px 4px;font-size:11px;font-weight:600;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;background:#fff;transition:all 0.15s}
+.bulk-btn:hover{opacity:0.8}
+.bulk-btn.ap{border-color:#1D9E75;color:#0F6E56;background:#f0faf6}
+.bulk-btn.ab{border-color:#D85A30;color:#993C1D;background:#fdf2ee}
+.bulk-btn.hd{border-color:#BA7517;color:#854F0B;background:#fdf6e8}
+.worker-card{background:rgba(255,255,255,0.92);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 6px 18px rgba(2,6,23,0.06)}
+.worker-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg, rgba(29,158,117,0.18), rgba(56,189,248,0.16));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--brand);flex-shrink:0;border:1px solid rgba(15,110,86,0.14)}
+.worker-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.worker-role{font-size:12px;color:#888;margin-top:1px}
+.att-btns{display:flex;gap:5px}
+.att-btn{flex:1;padding:9px 2px;font-size:11px;font-weight:800;border:1px solid rgba(2,6,23,0.10);border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.9);color:#64748b;transition:transform 0.12s, box-shadow 0.12s, border-color 0.12s}
+.att-btn:hover{border-color:#aaa}
+.att-btn:active{transform:translateY(1px)}
+.att-btn.P.sel{background:#E1F5EE;border-color:#1D9E75;color:#0F6E56}
+.att-btn.A.sel{background:#FAECE7;border-color:#D85A30;color:#993C1D}
+.att-btn.H.sel{background:#FAEEDA;border-color:#BA7517;color:#854F0B}
+.att-btn.L.sel{background:#E6F1FB;border-color:#378ADD;color:#185FA5}
+.ot-row{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #f0f0eb}
+.ot-label{font-size:11px;color:#888}
+.ot-input{width:64px;padding:6px 8px;font-size:12px;border:1px solid rgba(2,6,23,0.10);border-radius:10px;background:rgba(248,250,252,0.9);color:#0f172a;outline:none}
+.ot-input:focus{border-color:#1D9E75}
+.note-toggle{font-size:11px;color:#888;background:none;border:none;cursor:pointer;padding:3px 0;margin-top:6px;display:block;text-decoration:underline}
+.worker-note{display:none;margin-top:8px}
+.worker-note.show{display:block}
+.note-input{width:100%;padding:8px 10px;font-size:12px;border:1px solid rgba(2,6,23,0.10);border-radius:12px;background:rgba(248,250,252,0.9);color:#0f172a;outline:none;font-family:inherit}
+.note-input:focus{border-color:#1D9E75}
+.adv-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.adv-input{width:88px;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:8px;background:#fafaf8;color:#1a1a1a;outline:none}
+.adv-input:focus{border-color:#1D9E75}
+.card-title{font-size:13px;font-weight:700;color:#1a1a1a;margin:12px 0 8px}
+.report-head{background:#f7f7f2;border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin-bottom:12px}
+.report-head-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.report-sub{font-size:12px;color:#888;line-height:1.4}
+.report-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.rep-metric{background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:12px 8px;text-align:center}
+.rep-ico{width:28px;height:28px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.rep-ico.p{background:#E1F5EE;color:#0F6E56}
+.rep-ico.a{background:#FAECE7;color:#993C1D}
+.rep-ico.o{background:#E6F1FB;color:#185FA5}
+.rep-ico.w{background:#FAEEDA;color:#854F0B}
+.rep-ico.m{background:#f3f3f3;color:#444}
+.rep-val{font-size:18px;font-weight:800}
+.rep-lbl{font-size:11px;color:#888;margin-top:3px}
+.rep-subline{margin-top:8px;text-align:center;font-size:12px;color:#888}
+.rep-subline b{color:#444}
+.pay-card{background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin:12px 0}
+.pay-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0f0eb;font-size:13px}
+.pay-row:last-child{border-bottom:none}
+.pay-lbl{color:#666}
+.pay-val{font-weight:700}
+.pay-val.neg{color:#993C1D}
+.pay-total{font-size:14px}
+.pay-net{font-size:16px;color:#0F6E56}
+.tbl-card{background:#fff;border:1px solid #e8e8e3;border-radius:12px;overflow:hidden}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:#f7f7f2;color:#888;text-align:left;font-weight:700;padding:10px 12px;border-bottom:1px solid #e8e8e3}
+.tbl td{padding:10px 12px;border-bottom:1px solid #f0f0eb;vertical-align:top}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.pill.p{background:#E1F5EE;color:#0F6E56}
+.pill.a{background:#FAECE7;color:#993C1D}
+.pill.h{background:#FAEEDA;color:#854F0B}
+.pill.l{background:#E6F1FB;color:#185FA5}
+.print-btn{width:100%;padding:12px;background:#0F6E56;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;transition:background 0.15s}
+.print-btn:hover{background:#1D9E75}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:flex-end;justify-content:center;z-index:10000;padding:14px}
+.modal.hide{display:none}
+.modal-sheet{width:100%;max-width:480px;background:#fff;border-radius:16px 16px 14px 14px;box-shadow:0 20px 50px rgba(0,0,0,0.25);overflow:hidden}
+.modal-hd{padding:14px 16px;border-bottom:1px solid #eee;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.modal-title{font-size:16px;font-weight:800;color:#1a1a1a;line-height:1.2}
+.modal-sub{font-size:12px;color:#888;margin-top:3px}
+.modal-body{padding:14px 16px}
+.time-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.mini-lbl{font-size:12px;color:#888;margin:0 0 6px;font-weight:600}
+.time-inp{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fafaf8;font-size:14px;outline:none}
+.time-inp:focus{border-color:#1D9E75}
+.type-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 14px}
+.type-btn{padding:10px 0;border:1.5px solid #cfe7de;border-radius:12px;background:#fff;color:#0F6E56;font-weight:800;font-size:14px;cursor:pointer}
+.type-btn.sel{background:#0F6E56;border-color:#0F6E56;color:#fff}
+.note-area{width:100%;min-height:90px;resize:none;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafaf8;outline:none;font-family:inherit;font-size:13px}
+.note-area:focus{border-color:#1D9E75}
+.modal-ft{padding:14px 16px;border-top:1px solid #eee;display:flex;gap:12px}
+.btn-ghost{flex:1;padding:12px;border:1.5px solid #ddd;border-radius:12px;background:#fff;color:#333;font-weight:800;font-size:14px;cursor:pointer}
+.btn-ok{flex:1;padding:12px;border:none;border-radius:12px;background:#43a047;color:#fff;font-weight:900;font-size:14px;cursor:pointer}
+@media print{
+  body{background:#fff}
+  .app{max-width:none;box-shadow:none}
+  .header,.tabs,#tab-attendance,#tab-workers,.toast,.month-sel{display:none!important}
+  #tab-summary{display:block!important;padding:0}
+  #tab-summary .print-btn, #tab-summary .export-btn, #tab-summary select{display:none!important}
+  .section{display:block!important}
+}
+.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.metric{background:#f7f7f2;border-radius:10px;padding:12px 8px;text-align:center}
+.metric-val{font-size:24px;font-weight:700}
+.metric-val.p{color:#0F6E56}.metric-val.a{color:#993C1D}.metric-val.h{color:#854F0B}.metric-val.t{color:#185FA5}
+.metric-lbl{font-size:11px;color:#888;margin-top:2px}
+.worker-stat{background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin-bottom:10px}
+.ws-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ws-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.ws-wage{font-size:12px;color:#888}
+.ws-counts{display:flex;gap:10px;font-size:11px;margin-bottom:6px;flex-wrap:wrap}
+.ws-bars{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-bottom:10px;background:#f0f0eb}
+.ws-bar.p{background:#1D9E75}.ws-bar.a{background:#D85A30}.ws-bar.h{background:#EF9F27}.ws-bar.l{background:#378ADD}
+.ws-salary{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid #f0f0eb}
+.ws-salary-lbl{font-size:12px;color:#888}
+.ws-salary-val{font-size:16px;font-weight:700;color:#0F6E56}
+.month-sel{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.month-sel select{padding:8px 10px;border:1px solid rgba(2,6,23,0.10);border-radius:12px;background:rgba(248,250,252,0.9);color:#0f172a;font-size:13px;font-family:inherit;outline:none}
+.export-btn{padding:8px 14px;border:1px solid rgba(15,110,86,0.22);background:rgba(225,245,238,0.55);color:var(--brand);border-radius:12px;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.15s}
+.export-btn:hover{background:#E1F5EE}
+.add-form{background:rgba(255,255,255,0.92);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 10px 24px rgba(2,6,23,0.06)}
+.add-form h3{font-size:15px;font-weight:600;margin-bottom:14px;color:#1a1a1a}
+.form-row{margin-bottom:10px}
+.form-row label{font-size:12px;color:#888;display:block;margin-bottom:4px;font-weight:500}
+.form-row input{width:100%;padding:10px 12px;border:1px solid rgba(2,6,23,0.10);border-radius:12px;font-size:14px;background:rgba(248,250,252,0.9);color:#0f172a;font-family:inherit;outline:none;transition:border 0.15s, box-shadow 0.15s}
+.form-row input:focus{border-color:#1D9E75}
+.btn-primary{width:100%;padding:12px;background:linear-gradient(135deg, var(--brand), var(--brand2));color:#fff;border:none;border-radius:14px;font-size:14px;font-weight:900;cursor:pointer;margin-top:6px;transition:transform 0.12s, box-shadow 0.12s;box-shadow:0 12px 26px rgba(15,110,86,0.22)}
+.btn-primary:hover{transform:translateY(-1px)}
+.worker-list-item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border:1px solid #e8e8e3;border-radius:12px;margin-bottom:8px}
+.wli-info{flex:1;min-width:0}
+.wli-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.wli-sub{font-size:12px;color:#888;margin-top:1px}
+.wli-actions{display:flex;gap:8px;align-items:center}
+.wli-report{padding:5px 12px;font-size:12px;border:1px solid #cfe7de;border-radius:8px;background:#f0faf6;color:#0F6E56;cursor:pointer;font-weight:600;transition:all 0.15s;white-space:nowrap}
+.wli-report:hover{opacity:0.85}
+.wli-del{padding:5px 12px;font-size:12px;border:1px solid #f0957b;border-radius:8px;background:none;color:#993C1D;cursor:pointer;font-weight:500;transition:all 0.15s}
+.wli-del:hover{background:#fdf2ee}
+.search-row{margin-bottom:12px}
+.search-row input{width:100%;padding:9px 14px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafaf8;color:#1a1a1a;font-family:inherit;outline:none}
+.search-row input:focus{border-color:#1D9E75}
+.section-title{font-size:11px;font-weight:600;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin:0 0 10px}
+.empty{text-align:center;padding:40px 20px;color:#aaa;font-size:14px;line-height:1.6}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg, var(--brand), var(--brand2));color:#fff;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:900;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 12px 26px rgba(2,6,23,0.20)}
+.toast.show{opacity:1}
+.toast.err{background:#993C1D}
+.auth{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;padding:22px;background:radial-gradient(900px 700px at 20% 0%, rgba(29,158,117,0.28), transparent 60%),radial-gradient(900px 700px at 90% 10%, rgba(56,189,248,0.18), transparent 55%),linear-gradient(180deg, #070b16, #0b1220)}
+.auth.hide{display:none}
+.auth-card{width:100%;max-width:420px;max-height:calc(100dvh - 40px);overflow:auto;-webkit-overflow-scrolling:touch;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,0.45);backdrop-filter: blur(16px);-webkit-backdrop-filter: blur(16px);padding:18px}
+.auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.auth-logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg, rgba(29,158,117,0.85), rgba(56,189,248,0.85));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:1000;letter-spacing:-0.6px}
+.auth-title{color:#fff;font-size:18px;font-weight:950;letter-spacing:-0.3px}
+.auth-sub{color:rgba(255,255,255,0.68);font-size:12px;margin-top:2px}
+.auth-tabs{display:flex;gap:10px;margin:14px 0 12px}
+.auth-tab{flex:1;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.78);font-weight:900;cursor:pointer}
+.auth-tab.active{background:rgba(255,255,255,0.16);color:#fff;border-color:rgba(255,255,255,0.22)}
+.auth-form{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:18px;padding:14px}
+.auth-row{margin-bottom:10px}
+.auth-row label{display:block;font-size:12px;color:rgba(255,255,255,0.70);margin-bottom:6px;font-weight:800}
+.auth-inp{width:100%;padding:12px 12px;border-radius:14px;border:1px solid rgba(255,255,255,0.18);background:rgba(2,6,23,0.35);color:#fff;outline:none;font-size:14px}
+.auth-inp:focus{border-color:rgba(56,189,248,0.55)}
+.auth-cta{width:100%;padding:12px;border:none;border-radius:14px;background:linear-gradient(135deg, rgba(29,158,117,0.95), rgba(56,189,248,0.80));color:#fff;font-weight:1000;font-size:14px;cursor:pointer;margin-top:4px}
+.auth-cta:hover{opacity:0.95}
+.auth-foot{margin-top:10px;color:rgba(255,255,255,0.65);font-size:12px;line-height:1.5}
+.loading-overlay{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;gap:14px}
+.loading-overlay.hide{display:none}
+.spinner{width:32px;height:32px;border:3px solid #e8e8e3;border-top-color:#0F6E56;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay p{font-size:14px;color:#888}
+.loading-overlay h2{font-size:18px;font-weight:600;color:#0F6E56}
+</style>
+</head>
+<body>
+
+<div class="auth hide" id="auth">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-logo">LA</div>
+      <div>
+        <div class="auth-title">Labour Attendance</div>
+        <div class="auth-sub">Premium register with offline mode</div>
+      </div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="auth-tab-login" onclick="switchAuth('login')">Login</button>
+      <button class="auth-tab" id="auth-tab-signup" onclick="switchAuth('signup')">Sign up</button>
+    </div>
+
+    <div class="auth-form" id="auth-login">
+      <div class="auth-row">
+        <label>Phone</label>
+        <input class="auth-inp" id="login-phone" inputmode="numeric" placeholder="e.g. 9876543210">
+      </div>
+      <div class="auth-row">
+        <label>PIN</label>
+        <input class="auth-inp" id="login-pin" type="password" inputmode="numeric" placeholder="4-digit PIN">
+      </div>
+      <button class="auth-cta" onclick="login()">Login</button>
+      <div class="auth-foot">Tip: PIN aapka local device me save hota hai. Internet nahi ho tab bhi login ho jayega.</div>
+    </div>
+
+    <div class="auth-form" id="auth-signup" style="display:none">
+      <div class="auth-row">
+        <label>Name</label>
+        <input class="auth-inp" id="signup-name" placeholder="Your name">
+      </div>
+      <div class="auth-row">
+        <label>Phone</label>
+        <input class="auth-inp" id="signup-phone" inputmode="numeric" placeholder="e.g. 9876543210">
+      </div>
+      <div class="auth-row">
+        <label>Create PIN</label>
+        <input class="auth-inp" id="signup-pin" type="password" inputmode="numeric" placeholder="4-digit PIN">
+      </div>
+      <button class="auth-cta" onclick="signup()">Create account</button>
+      <div class="auth-foot">Sign up once. After that, login quickly with phone + PIN.</div>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading-overlay">
+  <h2>Labour Attendance</h2>
+  <div class="spinner"></div>
+  <p>Google Sheets se data load ho raha hai...</p>
+</div>
+
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <h1>&#128197; Labour Attendance</h1>
+      <div class="user-chip">
+        <div class="user-name" id="user-name"></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+        <button class="sync-btn" id="sync-btn" onclick="syncNow()">&#8635; Sync</button>
+      </div>
+    </div>
+    <div class="sync-status" id="sync-status">Connecting...</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('attendance',this)">Attendance</button>
+    <button class="tab" onclick="switchTab('summary',this)">Summary</button>
+    <button class="tab" onclick="switchTab('workers',this)">Workers</button>
+  </div>
+
+  <!-- ATTENDANCE TAB -->
+  <div id="tab-attendance" class="section active">
+    <div class="date-bar">
+      <div class="date-nav">
+        <button onclick="changeDate(-1)">&#8592;</button>
+        <span class="date-label" id="att-date-lbl"></span>
+        <button onclick="changeDate(1)">&#8594;</button>
+      </div>
+    </div>
+    <div class="bulk-row">
+      <button class="bulk-btn ap" onclick="markAll('P')">&#10003; All Present</button>
+      <button class="bulk-btn ab" onclick="markAll('A')">&#10007; All Absent</button>
+      <button class="bulk-btn hd" onclick="markAll('H')">&#189; All Half Day</button>
+    </div>
+    <div id="att-list"></div>
+  </div>
+
+  <!-- SUMMARY TAB -->
+  <div id="tab-summary" class="section">
+    <div class="month-sel">
+      <select id="sum-worker" onchange="renderSummary()"></select>
+      <select id="sum-month" onchange="renderSummary()"></select>
+      <select id="sum-year" onchange="renderSummary()"></select>
+      <button class="export-btn" onclick="exportCSV()">&#8595; Export CSV</button>
+    </div>
+    <div id="summary-report"></div>
+    <button class="print-btn" onclick="generateSharePDF()">Generate & Share PDF</button>
+  </div>
+
+  <!-- WORKERS TAB -->
+  <div id="tab-workers" class="section">
+    <div class="search-row">
+      <input type="text" placeholder="&#128269; Worker ka naam search karo..." id="worker-search" oninput="renderWorkerList()">
+    </div>
+    <div class="add-form">
+      <h3>+ New Worker Add Karo</h3>
+      <div class="form-row"><label>Naam</label><input type="text" id="w-name" placeholder="e.g. Ramesh Kumar"></div>
+      <div class="form-row"><label>Kaam / Role</label><input type="text" id="w-role" placeholder="e.g. Mason, Helper, Electrician"></div>
+      <div class="form-row"><label>Daily Wage (&#8377;)</label><input type="number" id="w-wage" placeholder="e.g. 500"></div>
+      <div class="form-row"><label>Overtime Rate per hour (&#8377;) — 0 rakh sakte ho</label><input type="number" id="w-ot" placeholder="e.g. 80"></div>
+      <button class="btn-primary" onclick="addWorker()">Worker Add Karo</button>
+    </div>
+    <div class="section-title">Sab Workers</div>
+    <div id="worker-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal hide" id="att-modal" onclick="closeAttModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-title" id="am-title">Mark Present</div>
+        <div class="modal-sub" id="am-date"></div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="time-row">
+        <div>
+          <div class="mini-lbl">Check-in</div>
+          <input class="time-inp" id="am-in" type="time" />
+        </div>
+        <div>
+          <div class="mini-lbl">Check-out</div>
+          <input class="time-inp" id="am-out" type="time" />
+        </div>
+      </div>
+
+      <div class="mini-lbl">Attendance Type</div>
+      <div class="type-row">
+        <button class="type-btn" id="am-t-h" onclick="setAttType('H')">&#189;</button>
+        <button class="type-btn" id="am-t-p" onclick="setAttType('P')">P</button>
+        <button class="type-btn" id="am-t-ph" onclick="setAttType('PH')">P+&#189;</button>
+        <button class="type-btn" id="am-t-pp" onclick="setAttType('PP')">P+P</button>
+      </div>
+
+      <div class="mini-lbl">Notes</div>
+      <textarea class="note-area" id="am-note" placeholder="Enter notes (optional)"></textarea>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-ghost" onclick="hideAttModal()">Cancel</button>
+      <button class="btn-ok" onclick="saveAttModal()">Mark Present</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbyQ2H1UfXbptrsHeFpoYTLGMUXOO3dUmanX59aTzj_OVgUwKYpGiFvhmSD2nucHkz9buw/exec';
+
+let workers = [];
+let attendance = {};
+let notes = {};
+let overtime = {};
+let advances = {};
+let timeLogs = {};
+let currentDate = new Date();
+let syncTimer = null;
+let attModalState = { wid: null, dk: null, type: 'P' };
+let authState = { mode: 'login' };
+let autoSyncTimer = null;
+
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem('users') || '[]'); } catch (e) { return []; }
+}
+
+function setUsers(u) {
+  try { localStorage.setItem('users', JSON.stringify(u)); } catch (e) {}
+}
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem('session') || 'null'); } catch (e) { return null; }
+}
+
+function setSession(s) {
+  try { localStorage.setItem('session', JSON.stringify(s)); } catch (e) {}
+}
+
+function isAuthed() {
+  const s = getSession();
+  if (!s || !s.uid) return false;
+  // session exists => treat as authed; server will validate on sync
+  return true;
+}
+
+function currentUser() {
+  const s = getSession();
+  if (!s || !s.uid) return null;
+  // best-effort local user info (offline fallback only)
+  return getUsers().find(u => u.id === s.uid) || null;
+}
+
+function showAuth() {
+  document.getElementById('auth').classList.remove('hide');
+  document.getElementById('loading-overlay').classList.add('hide');
+  switchAuth('login');
+}
+
+function hideAuth() {
+  document.getElementById('auth').classList.add('hide');
+}
+
+function switchAuth(mode) {
+  authState.mode = mode;
+  document.getElementById('auth-tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('auth-tab-signup').classList.toggle('active', mode === 'signup');
+  document.getElementById('auth-login').style.display = mode === 'login' ? '' : 'none';
+  document.getElementById('auth-signup').style.display = mode === 'signup' ? '' : 'none';
+}
+
+function normPhone(p) {
+  return (p || '').toString().replace(/\D/g, '').slice(-10);
+}
+
+function login() {
+  const phone = normPhone(document.getElementById('login-phone').value);
+  const pin = (document.getElementById('login-pin').value || '').trim();
+  if (phone.length < 10) { showToast('Valid phone number dalo', true); return; }
+  if (pin.length < 4) { showToast('PIN dalo', true); return; }
+  remoteLogin(phone, pin);
+}
+
+function signup() {
+  const name = (document.getElementById('signup-name').value || '').trim();
+  const phone = normPhone(document.getElementById('signup-phone').value);
+  const pin = (document.getElementById('signup-pin').value || '').trim();
+  if (!name) { showToast('Name dalo', true); return; }
+  if (phone.length < 10) { showToast('Valid phone number dalo', true); return; }
+  if (!/^\d{4,6}$/.test(pin)) { showToast('PIN 4-6 digits rakho', true); return; }
+  remoteSignup(name, phone, pin);
+}
+
+function logout() {
+  setSession(null);
+  document.getElementById('user-name').textContent = '';
+  showAuth();
+}
+
+async function remoteLogin(phone, pin) {
+  try {
+    const res = await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'login', phone, pin }) });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const u = data.user;
+    setSession({ uid: u.uid, at: Date.now() });
+    afterAuthInit();
+  } catch (e) {
+    // offline fallback: local users
+    const u = getUsers().find(x => x.phone === phone && x.pin === pin);
+    if (!u) { showToast('Login failed (internet) + local user nahi mila', true); return; }
+    setSession({ uid: u.id, at: Date.now() });
+    afterAuthInit();
+  }
+}
+
+async function remoteSignup(name, phone, pin) {
+  try {
+    const res = await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'signup', name, phone, pin }) });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const u = data.user;
+    setSession({ uid: u.uid, at: Date.now() });
+    afterAuthInit();
+  } catch (e) {
+    // offline fallback: create local user
+    const users = getUsers();
+    if (users.some(x => x.phone === phone)) { showToast('Ye phone pehle se registered hai (local)', true); return; }
+    const u = { id: 'u' + Date.now(), name, phone, pin, createdAt: Date.now() };
+    users.push(u);
+    setUsers(users);
+    setSession({ uid: u.id, at: Date.now() });
+    afterAuthInit();
+  }
+}
+
+async function afterAuthInit() {
+  hideAuth();
+  // Show whatever we have locally; server-backed name will show on next login/signup
+  const s = getSession();
+  document.getElementById('user-name').textContent = s && s.uid ? ('Account • ' + s.uid) : '';
+  document.getElementById('loading-overlay').classList.remove('hide');
+  await loadFromSheets();
+  document.getElementById('loading-overlay').classList.add('hide');
+  renderAttendance();
+  renderSummary();
+  renderWorkerList();
+  startAutoSync();
+  showToast('Welcome!');
+}
+
+function startAutoSync() {
+  stopAutoSync();
+  autoSyncTimer = setInterval(async () => {
+    if (!navigator.onLine) return;
+    // pull latest periodically to keep devices in sync
+    await loadFromSheets();
+    // refresh UI if user is on summary/attendance
+    renderAttendance();
+    renderSummary();
+    renderWorkerList();
+  }, 25000);
+}
+
+function stopAutoSync() {
+  if (autoSyncTimer) clearInterval(autoSyncTimer);
+  autoSyncTimer = null;
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && isAuthed() && navigator.onLine) {
+    await loadFromSheets();
+    renderAttendance();
+    renderSummary();
+    renderWorkerList();
+  }
+});
+
+window.addEventListener('online', async () => {
+  if (isAuthed()) {
+    await loadFromSheets();
+    renderAttendance();
+    renderSummary();
+    renderWorkerList();
+  }
+});
+
+function dateKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function fmtDate(d) {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function getInitials(name) {
+  return name.trim().split(' ').map(n => n[0] ? n[0].toUpperCase() : '').slice(0,2).join('');
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('sync-status');
+  el.textContent = msg;
+  el.className = 'sync-status' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
+}
+
+function saveLocal() {
+  try {
+    const uid = (getSession() && getSession().uid) ? getSession().uid : 'anon';
+    localStorage.setItem('lw_' + uid, JSON.stringify(workers));
+    localStorage.setItem('la_' + uid, JSON.stringify(attendance));
+    localStorage.setItem('ln_' + uid, JSON.stringify(notes));
+    localStorage.setItem('lo_' + uid, JSON.stringify(overtime));
+    localStorage.setItem('ladv_' + uid, JSON.stringify(advances));
+    localStorage.setItem('lt_' + uid, JSON.stringify(timeLogs));
+  } catch(e) {}
+}
+
+function loadLocal() {
+  try {
+    const uid = (getSession() && getSession().uid) ? getSession().uid : 'anon';
+    workers = JSON.parse(localStorage.getItem('lw_' + uid) || '[]');
+    attendance = JSON.parse(localStorage.getItem('la_' + uid) || '{}');
+    notes = JSON.parse(localStorage.getItem('ln_' + uid) || '{}');
+    overtime = JSON.parse(localStorage.getItem('lo_' + uid) || '{}');
+    advances = JSON.parse(localStorage.getItem('ladv_' + uid) || '{}');
+    timeLogs = JSON.parse(localStorage.getItem('lt_' + uid) || '{}');
+  } catch(e) {
+    workers = []; attendance = {}; notes = {}; overtime = {}; advances = {}; timeLogs = {};
+  }
+}
+
+async function loadFromSheets() {
+  try {
+    const s = getSession();
+    const uid = s && s.uid ? s.uid : '';
+    if (!uid) throw new Error('Missing uid');
+    const res = await fetch(API + '?t=' + Date.now() + '&uid=' + encodeURIComponent(uid));
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    workers = data.workers || [];
+    attendance = data.attendance || {};
+    notes = data.notes || {};
+    overtime = data.overtime || {};
+    advances = data.advances || {};
+    timeLogs = data.timeLogs || {};
+    saveLocal();
+    setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
+    return true;
+  } catch(e) {
+    loadLocal();
+    setStatus('Offline mode — local data load hua', 'err');
+    return false;
+  }
+}
+
+async function saveToSheets() {
+  saveLocal();
+  setStatus('Saving...', '');
+  document.getElementById('sync-btn').classList.add('syncing');
+  try {
+    const s = getSession();
+    const uid = s && s.uid ? s.uid : '';
+    if (!uid) throw new Error('Missing uid');
+    const res = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'save', uid, workers, attendance, notes, overtime, advances, timeLogs })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
+  } catch(e) {
+    setStatus('Local mein save hua (internet check karo)', 'err');
+  }
+  document.getElementById('sync-btn').classList.remove('syncing');
+}
+
+function scheduleSave() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(saveToSheets, 1500);
+}
+
+async function syncNow() {
+  document.getElementById('sync-btn').classList.add('syncing');
+  setStatus('Syncing...', '');
+  await loadFromSheets();
+  document.getElementById('sync-btn').classList.remove('syncing');
+  renderAttendance();
+  renderSummary();
+  renderWorkerList();
+  showToast('Sync complete!');
+}
+
+function initUI() {
+  document.getElementById('att-date-lbl').textContent = fmtDate(currentDate);
+  const ws = document.getElementById('sum-worker');
+  const ms = document.getElementById('sum-month');
+  const ys = document.getElementById('sum-year');
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  months.forEach((m, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = m;
+    if (i === new Date().getMonth()) o.selected = true;
+    ms.appendChild(o);
+  });
+  const yr = new Date().getFullYear();
+  for (let y = yr; y >= yr - 3; y--) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === yr) o.selected = true;
+    ys.appendChild(o);
+  }
+
+  ws.innerHTML = '';
+  const all = document.createElement('option');
+  all.value = 'ALL';
+  all.textContent = 'All workers';
+  ws.appendChild(all);
+}
+
+function changeDate(d) {
+  currentDate.setDate(currentDate.getDate() + d);
+  document.getElementById('att-date-lbl').textContent = fmtDate(currentDate);
+  renderAttendance();
+}
+
+function switchTab(t, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+  el.classList.add('active');
+  if (t === 'summary') renderSummary();
+  if (t === 'workers') renderWorkerList();
+  if (t === 'attendance') renderAttendance();
+}
+
+function markAll(status) {
+  const dk = dateKey(currentDate);
+  if (!attendance[dk]) attendance[dk] = {};
+  workers.forEach(w => { attendance[dk][w.id] = status; });
+  scheduleSave();
+  renderAttendance();
+  const labels = { P: 'Present', A: 'Absent', H: 'Half Day' };
+  showToast('Sab ' + labels[status] + ' mark ho gaye!');
+}
+
+function markAtt(wid, status) {
+  if (status === 'P' || status === 'H') {
+    openAttModal(wid, status);
+    return;
+  }
+  const dk = dateKey(currentDate);
+  if (!attendance[dk]) attendance[dk] = {};
+  attendance[dk][wid] = status;
+  scheduleSave();
+  document.querySelectorAll('[data-wid="' + wid + '"] .att-btn').forEach(b => {
+    b.classList.remove('sel');
+    if (b.dataset.s === status) b.classList.add('sel');
+  });
+}
+
+function updateOT(wid, val) {
+  const dk = dateKey(currentDate);
+  if (!overtime[dk]) overtime[dk] = {};
+  overtime[dk][wid] = parseFloat(val) || 0;
+  scheduleSave();
+}
+
+function updateAdvance(wid, val) {
+  const dk = dateKey(currentDate);
+  if (!advances[dk]) advances[dk] = {};
+  advances[dk][wid] = Math.max(0, parseFloat(val) || 0);
+  scheduleSave();
+}
+
+function updateNote(wid, val) {
+  const dk = dateKey(currentDate);
+  if (!notes[dk]) notes[dk] = {};
+  notes[dk][wid] = val;
+  scheduleSave();
+}
+
+function toggleNote(wid) {
+  document.getElementById('note-' + wid).classList.toggle('show');
+}
+
+function renderAttendance() {
+  const dk = dateKey(currentDate);
+  const dayAtt = attendance[dk] || {};
+  const dayOt = overtime[dk] || {};
+  const dayAdv = advances[dk] || {};
+  const dayNote = notes[dk] || {};
+  const list = document.getElementById('att-list');
+  if (workers.length === 0) {
+    list.innerHTML = '<div class="empty">Abhi koi worker nahi hai.<br><br>Workers tab mein jao aur pehle worker add karo.</div>';
+    return;
+  }
+  list.innerHTML = workers.map(w => {
+    const s = dayAtt[w.id] || '';
+    const ot = dayOt[w.id] || 0;
+    const adv = dayAdv[w.id] || 0;
+    const note = dayNote[w.id] || '';
+    const presentSel = (s === 'P' || s === 'PH' || s === 'PP') ? ' sel' : '';
+    const halfSel = (s === 'H') ? ' sel' : '';
+    return `<div class="worker-card" data-wid="${w.id}">
+      <div class="worker-top">
+        <div class="avatar">${getInitials(w.name)}</div>
+        <div>
+          <div class="worker-name">${w.name}</div>
+          <div class="worker-role">${w.role} &bull; &#8377;${w.wage}/day</div>
+        </div>
+      </div>
+      <div class="att-btns">
+        <button class="att-btn P${presentSel}" data-s="P" onclick="markAtt('${w.id}','P')">Present</button>
+        <button class="att-btn A${s==='A'?' sel':''}" data-s="A" onclick="markAtt('${w.id}','A')">Absent</button>
+        <button class="att-btn H${halfSel}" data-s="H" onclick="markAtt('${w.id}','H')">Half Day</button>
+        <button class="att-btn L${s==='L'?' sel':''}" data-s="L" onclick="markAtt('${w.id}','L')">Leave</button>
+      </div>
+      <div class="ot-row">
+        <span class="ot-label">Overtime hours:</span>
+        <input type="number" class="ot-input" value="${ot}" min="0" max="16" step="0.5" onchange="updateOT('${w.id}',this.value)" placeholder="0">
+        <span class="ot-label" style="margin-left:4px">&#8377;${w.otRate||0}/hr</span>
+      </div>
+      <div class="adv-row">
+        <span class="ot-label">Advance (&#8377;):</span>
+        <input type="number" class="adv-input" value="${adv}" min="0" step="1" onchange="updateAdvance('${w.id}',this.value)" placeholder="0">
+      </div>
+      <button class="note-toggle" onclick="toggleNote('${w.id}')">+ Note / Advance likhna ho toh yahan</button>
+      <div class="worker-note${note ? ' show' : ''}" id="note-${w.id}">
+        <input class="note-input" type="text" placeholder="e.g. ₹200 advance liya, koi kaam ki baat..." value="${note.replace(/\"/g,'&quot;')}" oninput="updateNote('${w.id}',this.value)">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSummary() {
+  const ws = document.getElementById('sum-worker');
+  const m = parseInt(document.getElementById('sum-month').value);
+  const y = parseInt(document.getElementById('sum-year').value);
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  if (workers.length === 0) {
+    document.getElementById('summary-report').innerHTML = '<div class="empty">Koi worker nahi hai.</div>';
+    return;
+  }
+
+  // refresh worker dropdown
+  const prev = ws.value || 'ALL';
+  ws.innerHTML = '';
+  const all = document.createElement('option');
+  all.value = 'ALL';
+  all.textContent = 'All workers';
+  ws.appendChild(all);
+  workers.forEach(w => {
+    const o = document.createElement('option');
+    o.value = w.id;
+    o.textContent = w.name;
+    ws.appendChild(o);
+  });
+  ws.value = workers.some(w => w.id === prev) ? prev : 'ALL';
+
+  const selectedId = ws.value;
+
+  const dayUnits = (s) => {
+    if (s === 'P') return 1;
+    if (s === 'H') return 0.5;
+    if (s === 'PH') return 1.5;
+    if (s === 'PP') return 2;
+    return 0;
+  };
+
+  const computeWorker = (w) => {
+    let pDays = 0, a = 0, wo = 0, otHrs = 0, advAmt = 0;
+    let units = 0;
+    let cP = 0, cH = 0, cPH = 0, cPP = 0;
+    const rows = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dk = y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      const s = (attendance[dk] || {})[w.id] || '';
+      const ot = ((overtime[dk] || {})[w.id] || 0);
+      const adv = ((advances[dk] || {})[w.id] || 0);
+      const u = dayUnits(s);
+      if (s === 'P') cP++;
+      else if (s === 'H') cH++;
+      else if (s === 'PH') cPH++;
+      else if (s === 'PP') cPP++;
+      if (u > 0) pDays++;
+      else if (s === 'A') a++;
+      else if (s === 'L') wo++;
+      units += u;
+      otHrs += ot;
+      advAmt += adv;
+      rows.push({ day: d, s, ot, adv });
+    }
+    const basic = Math.round(units * w.wage);
+    const otPay = Math.round(otHrs * (w.otRate || 0));
+    const total = basic + otPay;
+    const net = total - Math.round(advAmt);
+    return { pDays, a, wo, units, cP, cH, cPH, cPP, otHrs, advAmt, basic, otPay, total, net, rows };
+  };
+
+  const reportEl = document.getElementById('summary-report');
+
+  if (selectedId === 'ALL') {
+    const allStats = workers.map(w => ({ w, ...computeWorker(w) }));
+    const totalEarnings = allStats.reduce((s, x) => s + x.total, 0);
+    const totalAdv = allStats.reduce((s, x) => s + Math.round(x.advAmt), 0);
+    reportEl.innerHTML = `
+      <div class="report-head">
+        <div class="report-head-top">
+          <div class="avatar">LR</div>
+          <div>
+            <div class="worker-name">Labor Report</div>
+            <div class="report-sub">${months[m]} ${y}</div>
+          </div>
+        </div>
+        <div class="report-sub">All workers combined</div>
+      </div>
+
+      <div class="pay-card">
+        <div class="pay-row"><span class="pay-lbl">Total Earnings</span><span class="pay-val pay-total">&#8377;${totalEarnings.toLocaleString('en-IN')}</span></div>
+        <div class="pay-row"><span class="pay-lbl">Advance Payments</span><span class="pay-val neg">-&#8377;${totalAdv.toLocaleString('en-IN')}</span></div>
+        <div class="pay-row"><span class="pay-lbl">Net Payment</span><span class="pay-val pay-net">&#8377;${(totalEarnings - totalAdv).toLocaleString('en-IN')}</span></div>
+      </div>
+
+      <div class="section-title">Worker-wise breakdown</div>
+      ${allStats.map(x => `
+        <div class="worker-stat">
+          <div class="ws-top">
+            <div class="avatar">${getInitials(x.w.name)}</div>
+            <div>
+              <div class="ws-name">${x.w.name}</div>
+              <div class="ws-wage">${x.w.role} &bull; &#8377;${x.w.wage}/day</div>
+            </div>
+          </div>
+          <div class="ws-counts">
+            <span style="color:#0F6E56">&#9679; ${x.pDays} Present</span>
+            <span style="color:#993C1D">&#9679; ${x.a} Absent</span>
+            <span style="color:#185FA5">&#9679; ${x.wo} Week Off</span>
+            ${x.otHrs > 0 ? `<span style="color:#666">+ ${x.otHrs}hr OT</span>` : ''}
+            ${x.advAmt > 0 ? `<span style="color:#993C1D">- &#8377;${Math.round(x.advAmt)}</span>` : ''}
+          </div>
+          <div class="ws-salary">
+            <span class="ws-salary-lbl">Net Payment</span>
+            <span class="ws-salary-val">&#8377;${x.net.toLocaleString('en-IN')}</span>
+          </div>
+        </div>
+      `).join('')}
+    `;
+    return;
+  }
+
+  const w = workers.find(x => x.id === selectedId) || workers[0];
+  const r = computeWorker(w);
+
+  const statusPill = (s) => {
+    if (s === 'P') return `<span class="pill p">P</span>`;
+    if (s === 'A') return `<span class="pill a">A</span>`;
+    if (s === 'H') return `<span class="pill h">&#189;</span>`;
+    if (s === 'PH') return `<span class="pill p">P+&#189;</span>`;
+    if (s === 'PP') return `<span class="pill p">P+P</span>`;
+    if (s === 'L') return `<span class="pill l">WO</span>`;
+    return `<span style="color:#aaa">-</span>`;
+  };
+
+  reportEl.innerHTML = `
+    <div class="report-head">
+      <div class="report-head-top">
+        <div class="avatar">${getInitials(w.name)}</div>
+        <div>
+          <div class="worker-name">${w.name} - Report</div>
+          <div class="report-sub">${months[m]} ${y}</div>
+        </div>
+      </div>
+      <div class="report-sub">Role: ${w.role} &nbsp;|&nbsp; Salary: &#8377;${w.wage} per day</div>
+    </div>
+
+    <div class="card-title">Attendance Summary</div>
+    <div class="report-grid">
+      <div class="rep-metric">
+        <div class="rep-ico p">&#10003;</div>
+        <div class="rep-val" style="color:#0F6E56">${r.pDays}</div>
+        <div class="rep-lbl">Present</div>
+      </div>
+      <div class="rep-metric">
+        <div class="rep-ico a">&#10007;</div>
+        <div class="rep-val" style="color:#993C1D">${r.a}</div>
+        <div class="rep-lbl">Absent</div>
+      </div>
+      <div class="rep-metric">
+        <div class="rep-ico o">OT</div>
+        <div class="rep-val" style="color:#185FA5">${r.otHrs % 1 === 0 ? r.otHrs : r.otHrs.toFixed(1)}h</div>
+        <div class="rep-lbl">OT</div>
+      </div>
+      <div class="rep-metric">
+        <div class="rep-ico m">&#128179;</div>
+        <div class="rep-val" style="color:#444">&#8377;${Math.round(r.advAmt).toLocaleString('en-IN')}</div>
+        <div class="rep-lbl">Advance</div>
+      </div>
+    </div>
+    <div class="rep-subline"><b>${r.wo}</b> Week Off</div>
+    <div class="rep-subline">
+      Breakdown: <b>P</b> ${r.cP}, <b>½</b> ${r.cH}, <b>P+½</b> ${r.cPH}, <b>P+P</b> ${r.cPP}
+      &nbsp;|&nbsp; <b>Total units</b> ${r.units % 1 === 0 ? r.units : r.units.toFixed(1)}
+    </div>
+
+    <div class="card-title">Payment Summary</div>
+    <div class="pay-card">
+      <div class="pay-row"><span class="pay-lbl">Basic Earnings</span><span class="pay-val">&#8377;${r.basic.toLocaleString('en-IN')}</span></div>
+      <div class="pay-row"><span class="pay-lbl">Overtime Earnings</span><span class="pay-val">&#8377;${r.otPay.toLocaleString('en-IN')}</span></div>
+      <div class="pay-row"><span class="pay-lbl">Total Earnings</span><span class="pay-val pay-total">&#8377;${r.total.toLocaleString('en-IN')}</span></div>
+      <div class="pay-row"><span class="pay-lbl">Advance Payments</span><span class="pay-val neg">-&#8377;${Math.round(r.advAmt).toLocaleString('en-IN')}</span></div>
+      <div class="pay-row"><span class="pay-lbl">Net Payment</span><span class="pay-val pay-net">&#8377;${r.net.toLocaleString('en-IN')}</span></div>
+    </div>
+    <div class="report-sub">Final: (${r.units % 1 === 0 ? r.units : r.units.toFixed(1)} × &#8377;${w.wage}) + &#8377;${r.otPay} − &#8377;${Math.round(r.advAmt)} = <b>&#8377;${r.net.toLocaleString('en-IN')}</b></div>
+
+    <div class="card-title">Attendance Details</div>
+    <div class="tbl-card">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:34%">Date</th>
+            <th style="width:22%">Status</th>
+            <th style="width:22%">OT Hrs</th>
+            <th style="width:22%">Advance</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${r.rows.map(row => `
+            <tr>
+              <td>${String(row.day).padStart(2,'0')} ${months[m].slice(0,3)}</td>
+              <td>${statusPill(row.s)}</td>
+              <td>${row.ot ? (row.ot % 1 === 0 ? row.ot : row.ot.toFixed(1)) : '-'}</td>
+              <td>${row.adv ? ('&#8377;' + Math.round(row.adv)) : '-'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderWorkerList() {
+  const q = (document.getElementById('worker-search').value || '').toLowerCase();
+  const filtered = workers.filter(w => w.name.toLowerCase().includes(q) || w.role.toLowerCase().includes(q));
+  const list = document.getElementById('worker-list');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Koi worker nahi milaa.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(w => `
+    <div class="worker-list-item">
+      <div class="avatar">${getInitials(w.name)}</div>
+      <div class="wli-info">
+        <div class="wli-name">${w.name}</div>
+        <div class="wli-sub">${w.role} &bull; &#8377;${w.wage}/day &bull; OT &#8377;${w.otRate || 0}/hr</div>
+      </div>
+      <div class="wli-actions">
+        <button class="wli-report" onclick="openWorkerReport('${w.id}')">Report</button>
+        <button class="wli-del" onclick="deleteWorker('${w.id}')">Hata do</button>
+      </div>
+    </div>`).join('');
+}
+
+function addWorker() {
+  const name = document.getElementById('w-name').value.trim();
+  const role = document.getElementById('w-role').value.trim();
+  const wage = parseFloat(document.getElementById('w-wage').value) || 0;
+  const otRate = parseFloat(document.getElementById('w-ot').value) || 0;
+  if (!name) { showToast('Naam bharo pehle!', true); return; }
+  if (wage <= 0) { showToast('Daily wage bharo!', true); return; }
+  workers.push({ id: 'w' + Date.now(), name, role: role || 'Worker', wage, otRate });
+  scheduleSave();
+  ['w-name','w-role','w-wage','w-ot'].forEach(id => document.getElementById(id).value = '');
+  renderWorkerList();
+  renderAttendance();
+  showToast(name + ' add ho gaya!');
+}
+
+function deleteWorker(id) {
+  const w = workers.find(x => x.id === id);
+  if (!confirm((w ? w.name : 'Is worker') + ' ko remove karna chahte ho?')) return;
+  workers = workers.filter(w => w.id !== id);
+  scheduleSave();
+  renderWorkerList();
+  renderAttendance();
+  showToast('Worker remove ho gaya');
+}
+
+function exportCSV() {
+  const sw = document.getElementById('sum-worker');
+  const m = parseInt(document.getElementById('sum-month').value);
+  const y = parseInt(document.getElementById('sum-year').value);
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let csv = 'Worker Name,Role,Daily Wage (Rs)';
+  for (let d = 1; d <= daysInMonth; d++) csv += ',' + d;
+  csv += ',Present,Absent,Half Day,Leave,OT Hours,Advance (Rs),Total Salary (Rs),Net Payment (Rs)\\n';
+
+  const selected = sw && sw.value && sw.value !== 'ALL'
+    ? workers.filter(w => w.id === sw.value)
+    : workers;
+
+  selected.forEach(w => {
+    let row = `${w.name},${w.role},${w.wage}`;
+    let pDays = 0, a = 0, h = 0, l = 0, otHrs = 0;
+    let units = 0;
+    let advAmt = 0;
+    const dayUnits = (s) => {
+      if (s === 'P') return 1;
+      if (s === 'H') return 0.5;
+      if (s === 'PH') return 1.5;
+      if (s === 'PP') return 2;
+      return 0;
+    };
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dk = y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      const s = (attendance[dk] || {})[w.id] || '-';
+      row += ',' + s;
+      const u = dayUnits(s);
+      units += u;
+      if (u > 0) pDays++;
+      else if (s === 'A') a++;
+      else if (s === 'H') h++;
+      else if (s === 'L') l++;
+      otHrs += ((overtime[dk] || {})[w.id] || 0);
+      advAmt += ((advances[dk] || {})[w.id] || 0);
+    }
+    const sal = Math.round((units * w.wage) + (otHrs * (w.otRate || 0)));
+    const adv = Math.round(advAmt);
+    const net = sal - adv;
+    row += `,${pDays},${a},${h},${l},${otHrs},${adv},${sal},${net}\\n`;
+    csv += row;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Attendance_${months[m]}_${y}.csv`;
+  a.click();
+  showToast('CSV export ho gaya!');
+}
+
+function generateSharePDF() {
+  try {
+    window.print();
+    showToast('Print dialog open — Save as PDF');
+  } catch (e) {
+    showToast('PDF generate nahi hua (browser check karo)', true);
+  }
+}
+
+function openWorkerReport(wid) {
+  // switch tab
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-summary').classList.add('active');
+  document.querySelectorAll('.tab')[1].classList.add('active');
+
+  // set worker and render
+  const ws = document.getElementById('sum-worker');
+  if (ws) ws.value = wid;
+  renderSummary();
+}
+
+function openAttModal(wid, fallbackType = 'P') {
+  const dk = dateKey(currentDate);
+  attModalState.wid = wid;
+  attModalState.dk = dk;
+
+  const w = workers.find(x => x.id === wid);
+  document.getElementById('am-title').textContent = w ? ('Mark Present - ' + w.name) : 'Mark Present';
+  document.getElementById('am-date').textContent = fmtDate(currentDate);
+
+  const existingType = ((attendance[dk] || {})[wid]) || fallbackType;
+  const existingNote = ((notes[dk] || {})[wid]) || '';
+  const tl = ((timeLogs[dk] || {})[wid]) || {};
+
+  document.getElementById('am-in').value = tl.in || '';
+  document.getElementById('am-out').value = tl.out || '';
+  document.getElementById('am-note').value = existingNote;
+
+  setAttType(existingType === 'P' || existingType === 'H' || existingType === 'PH' || existingType === 'PP' ? existingType : fallbackType);
+
+  document.getElementById('att-modal').classList.remove('hide');
+}
+
+function setAttType(t) {
+  attModalState.type = t;
+  ['am-t-h','am-t-p','am-t-ph','am-t-pp'].forEach(id => document.getElementById(id).classList.remove('sel'));
+  const map = { H: 'am-t-h', P: 'am-t-p', PH: 'am-t-ph', PP: 'am-t-pp' };
+  const btn = map[t] ? document.getElementById(map[t]) : null;
+  if (btn) btn.classList.add('sel');
+}
+
+function hideAttModal() {
+  document.getElementById('att-modal').classList.add('hide');
+}
+
+function closeAttModal(e) {
+  // backdrop click
+  hideAttModal();
+}
+
+function saveAttModal() {
+  const { wid, dk, type } = attModalState;
+  if (!wid || !dk) { hideAttModal(); return; }
+  if (!attendance[dk]) attendance[dk] = {};
+  attendance[dk][wid] = type;
+
+  if (!notes[dk]) notes[dk] = {};
+  notes[dk][wid] = (document.getElementById('am-note').value || '').trim();
+
+  if (!timeLogs[dk]) timeLogs[dk] = {};
+  timeLogs[dk][wid] = {
+    in: document.getElementById('am-in').value || '',
+    out: document.getElementById('am-out').value || ''
+  };
+
+  scheduleSave();
+  hideAttModal();
+  renderAttendance();
+  renderSummary();
+}
+
+function showToast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err ? ' err' : '');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function init() {
+  initUI();
+  if (!isAuthed()) {
+    showAuth();
+    return;
+  }
+  const u = currentUser();
+  document.getElementById('user-name').textContent = u ? (u.name + ' • ' + u.phone) : '';
+  await loadFromSheets();
+  document.getElementById('loading-overlay').classList.add('hide');
+  renderAttendance();
+}
+
+init();
+</script>
+</body>
+</html>
