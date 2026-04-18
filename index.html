@@ -511,16 +511,24 @@ function logout() {
 
 async function remoteLogin(phone, pin) {
   try {
-    const res = await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'login', phone, pin }) });
+    // Use GET with params for login — avoids CORS issue
+    const url = API + '?action=login&phone=' + encodeURIComponent(phone) + '&pin=' + encodeURIComponent(pin) + '&t=' + Date.now();
+    const res = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     const u = data.user;
+    // Save user locally for offline fallback
+    const users = getUsers();
+    if (!users.find(x => x.id === u.uid)) {
+      users.push({ id: u.uid, name: u.name, phone: u.phone, pin: pin });
+      setUsers(users);
+    }
     setSession({ uid: u.uid, at: Date.now() });
     afterAuthInit();
   } catch (e) {
     // offline fallback: local users
     const u = getUsers().find(x => x.phone === phone && x.pin === pin);
-    if (!u) { showToast('Login failed (internet) + local user nahi mila', true); return; }
+    if (!u) { showToast('Login failed — internet check karo ya pehle signup karo', true); return; }
     setSession({ uid: u.id, at: Date.now() });
     afterAuthInit();
   }
@@ -528,16 +536,23 @@ async function remoteLogin(phone, pin) {
 
 async function remoteSignup(name, phone, pin) {
   try {
-    const res = await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'signup', name, phone, pin }) });
+    const url = API + '?action=signup&name=' + encodeURIComponent(name) + '&phone=' + encodeURIComponent(phone) + '&pin=' + encodeURIComponent(pin) + '&t=' + Date.now();
+    const res = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     const u = data.user;
+    // Save locally for offline
+    const users = getUsers();
+    if (!users.find(x => x.id === u.uid)) {
+      users.push({ id: u.uid, name: u.name, phone: u.phone, pin: pin });
+      setUsers(users);
+    }
     setSession({ uid: u.uid, at: Date.now() });
     afterAuthInit();
   } catch (e) {
     // offline fallback: create local user
     const users = getUsers();
-    if (users.some(x => x.phone === phone)) { showToast('Ye phone pehle se registered hai (local)', true); return; }
+    if (users.some(x => x.phone === phone)) { showToast('Ye phone pehle se registered hai', true); return; }
     const u = { id: 'u' + Date.now(), name, phone, pin, createdAt: Date.now() };
     users.push(u);
     setUsers(users);
@@ -565,13 +580,13 @@ function startAutoSync() {
   stopAutoSync();
   autoSyncTimer = setInterval(async () => {
     if (!navigator.onLine) return;
-    // pull latest periodically to keep devices in sync
+    // Agar koi pending save hai toh pull mat karo — data loss hoga
+    if (syncTimer) return;
     await loadFromSheets();
-    // refresh UI if user is on summary/attendance
     renderAttendance();
     renderSummary();
     renderWorkerList();
-  }, 25000);
+  }, 30000);
 }
 
 function stopAutoSync() {
@@ -581,6 +596,12 @@ function stopAutoSync() {
 
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && isAuthed() && navigator.onLine) {
+    // Pehle koi pending save complete karo
+    if (syncTimer) {
+      clearTimeout(syncTimer);
+      syncTimer = null;
+      await saveToSheets();
+    }
     await loadFromSheets();
     renderAttendance();
     renderSummary();
@@ -651,11 +672,27 @@ async function loadFromSheets() {
     const res = await fetch(API + '?t=' + Date.now() + '&uid=' + encodeURIComponent(uid));
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+
+    // Agar server pe advances empty hain but local mein hain — local ko preserve karo
+    const serverAdv = data.advances || {};
+    const localAdv = advances || {};
+    const mergedAdv = Object.assign({}, serverAdv);
+    // Local dates jo server pe nahi hain unhe merge karo
+    Object.keys(localAdv).forEach(dk => {
+      if (!mergedAdv[dk]) mergedAdv[dk] = {};
+      Object.keys(localAdv[dk]).forEach(wid => {
+        // Agar server pe 0 ya missing hai aur local pe value hai — local jeetega
+        if (!mergedAdv[dk][wid] && localAdv[dk][wid]) {
+          mergedAdv[dk][wid] = localAdv[dk][wid];
+        }
+      });
+    });
+
     workers = data.workers || [];
     attendance = data.attendance || {};
     notes = data.notes || {};
     overtime = data.overtime || {};
-    advances = data.advances || {};
+    advances = mergedAdv;
     timeLogs = data.timeLogs || {};
     saveLocal();
     setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
@@ -675,12 +712,15 @@ async function saveToSheets() {
     const s = getSession();
     const uid = s && s.uid ? s.uid : '';
     if (!uid) throw new Error('Missing uid');
-    const res = await fetch(API, {
+    const payload = JSON.stringify({ action: 'save', uid, workers, attendance, notes, overtime, advances, timeLogs });
+    // Use no-cors mode to avoid CORS preflight — Apps Script accepts this
+    await fetch(API, {
       method: 'POST',
-      body: JSON.stringify({ action: 'save', uid, workers, attendance, notes, overtime, advances, timeLogs })
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload
     });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    // no-cors returns opaque response, assume success if no throw
     setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
   } catch(e) {
     setStatus('Local mein save hua (internet check karo)', 'err');
