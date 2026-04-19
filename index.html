@@ -287,6 +287,8 @@ input,select,textarea{font-size:16px} /* prevent iOS zoom */
 .cb-txn-amt.income{color:#0F6E56}
 .cb-txn-amt.expense{color:#993C1D}
 .cb-txn-del{font-size:11px;color:#ccc;background:none;border:none;cursor:pointer;margin-top:3px;display:block;min-height:auto}
+.cb-pdf-btn{width:100%;padding:12px;background:none;border:1.5px solid #1D9E75;color:#0F6E56;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;transition:all 0.15s}
+.cb-pdf-btn:hover{background:#E1F5EE}
 </style>
 </head>
 <body>
@@ -423,6 +425,7 @@ input,select,textarea{font-size:16px} /* prevent iOS zoom */
       <button class="cb-add-btn income-btn" onclick="openTxnModal('income')">+ Income</button>
       <button class="cb-add-btn expense-btn" onclick="openTxnModal('expense')">- Expense</button>
     </div>
+    <button class="cb-pdf-btn" onclick="exportCashbookPDF()">&#128221; Download PDF Report</button>
     <!-- Transactions list -->
     <div class="section-title" style="margin-top:4px">Transactions</div>
     <div id="cb-txn-list"></div>
@@ -456,6 +459,7 @@ input,select,textarea{font-size:16px} /* prevent iOS zoom */
       </div>
     </div>
     <div class="modal-body">
+      <div class="form-row"><label>Date</label><input type="date" id="txn-date" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:12px;background:#fafaf8;font-size:14px;font-family:inherit;outline:none;color:#0f172a"></div>
       <div class="form-row"><label>Amount (&#8377;)</label><input type="number" id="txn-amount" placeholder="e.g. 5000" inputmode="numeric"></div>
       <div class="form-row"><label>Category</label>
         <select id="txn-category" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:12px;background:#fafaf8;font-size:14px;font-family:inherit;outline:none">
@@ -1212,6 +1216,12 @@ function openTxnModal(type) {
   document.getElementById('txn-amount').value = '';
   document.getElementById('txn-note').value = '';
   document.getElementById('txn-category').value = 'General';
+  // Set today's date as default
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2,'0');
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const yyyy = today.getFullYear();
+  document.getElementById('txn-date').value = yyyy+'-'+mm+'-'+dd;
   
   // Update category options based on type
   const cat = document.getElementById('txn-category');
@@ -1235,13 +1245,16 @@ function saveTxn() {
   if (amount <= 0) { showToast('Amount bharo!', true); return; }
   const note     = document.getElementById('txn-note').value.trim();
   const category = document.getElementById('txn-category').value;
+  const selectedDate = document.getElementById('txn-date').value;
+  // Use selected date but keep time as noon to avoid timezone issues
+  const txnDate = selectedDate ? new Date(selectedDate + 'T12:00:00') : new Date();
   const txn = {
     id: 't' + Date.now(),
     type: txnModalType,
     amount,
     category,
     note,
-    date: new Date().toISOString()
+    date: txnDate.toISOString()
   };
   cashbook.unshift(txn);
   saveCashbookLocal();
@@ -1265,7 +1278,12 @@ function renderCashbook() {
   document.getElementById('cb-month-lbl').textContent = cbFmtMonth(cbDate);
   
   // Filter by month
-  const monthTxns = cashbook.filter(t => t.date && t.date.startsWith(mk));
+  const monthTxns = cashbook.filter(t => {
+    if (!t.date) return false;
+    const d = new Date(t.date);
+    const tMk = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    return tMk === mk;
+  }).sort((a,b) => new Date(b.date) - new Date(a.date));
   
   const totalIncome  = monthTxns.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
   const totalExpense = monthTxns.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
@@ -1285,7 +1303,8 @@ function renderCashbook() {
   
   list.innerHTML = monthTxns.map(t => {
     const d = new Date(t.date);
-    const dateStr = d.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const dateStr = days[d.getDay()] + ', ' + d.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getFullYear();
     const sign = t.type === 'income' ? '+' : '-';
     return `<div class="cb-txn-item">
       <div class="cb-txn-dot ${t.type}">${t.type === 'income' ? '&#8599;' : '&#8600;'}</div>
@@ -1328,6 +1347,127 @@ async function saveCashbookToSupabase() {
       updated_at: new Date().toISOString()
     }, { onConflict: 'uid' });
   } catch(e) { console.error('Cashbook save error:', e); }
+}
+
+function exportCashbookPDF() {
+  const mk = cbMonthKey(cbDate);
+  const monthName = cbFmtMonth(cbDate);
+  const s = getSession();
+  const userName = s ? s.name : '';
+
+  const monthTxns = cashbook.filter(t => {
+    if (!t.date) return false;
+    const d = new Date(t.date);
+    const tMk = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    return tMk === mk;
+  }).sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  const totalIncome  = monthTxns.filter(t => t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const totalExpense = monthTxns.filter(t => t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const balance = totalIncome - totalExpense;
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const rows = monthTxns.map(t => {
+    const d = new Date(t.date);
+    const dateStr = String(d.getDate()).padStart(2,'0') + ' ' + months[d.getMonth()];
+    const sign = t.type === 'income' ? '+' : '-';
+    const color = t.type === 'income' ? '#0F6E56' : '#c0392b';
+    return `<tr>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0eb;font-size:13px">${dateStr}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0eb;font-size:13px">${t.category}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0eb;font-size:13px;color:#555">${t.note||'-'}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0eb;font-size:13px;font-weight:700;color:${color};text-align:right">${sign}&#8377;${Math.round(t.amount).toLocaleString('en-IN')}</td>
+    </tr>`;
+  }).join('');
+
+  const balColor = balance >= 0 ? '#0F6E56' : '#c0392b';
+  const balSign  = balance >= 0 ? '' : '-';
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cashbook - ${monthName}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; padding: 32px; color: #1a1a1a; background: #fff; }
+  .header { background: linear-gradient(135deg, #0F6E56, #1D9E75); color: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; }
+  .header h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .header p { font-size: 13px; opacity: 0.85; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .summary-card { border: 1px solid #e8e8e3; border-radius: 12px; padding: 16px; text-align: center; }
+  .summary-val { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .summary-lbl { font-size: 12px; color: #888; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: #f7f7f2; padding: 10px 12px; font-size: 12px; font-weight: 700; color: #888; text-align: left; border-bottom: 2px solid #e8e8e3; }
+  .total-row td { padding: 12px; font-weight: 800; font-size: 14px; border-top: 2px solid #e8e8e3; background: #f7f7f2; }
+  .empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
+  .footer { margin-top: 24px; text-align: center; font-size: 11px; color: #aaa; border-top: 1px solid #f0f0eb; padding-top: 12px; }
+  @media print { body { padding: 16px; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <h1>&#128213; Cashbook Report</h1>
+        <p>${monthName} &bull; ${userName}</p>
+      </div>
+      <div style="text-align:right;font-size:12px;opacity:0.85">
+        Generated:<br>${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-val" style="color:#0F6E56">&#8377;${Math.round(totalIncome).toLocaleString('en-IN')}</div>
+      <div class="summary-lbl">Total Income</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-val" style="color:#c0392b">&#8377;${Math.round(totalExpense).toLocaleString('en-IN')}</div>
+      <div class="summary-lbl">Total Expense</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-val" style="color:${balColor}">${balSign}&#8377;${Math.abs(Math.round(balance)).toLocaleString('en-IN')}</div>
+      <div class="summary-lbl">Net Balance</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:80px">Date</th>
+        <th style="width:120px">Category</th>
+        <th>Note</th>
+        <th style="width:120px;text-align:right">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${monthTxns.length > 0 ? rows : '<tr><td colspan="4" class="empty">Is mahine koi transaction nahi</td></tr>'}
+      ${monthTxns.length > 0 ? `
+      <tr class="total-row">
+        <td colspan="3">Net Balance</td>
+        <td style="text-align:right;color:${balColor}">${balSign}&#8377;${Math.abs(Math.round(balance)).toLocaleString('en-IN')}</td>
+      </tr>` : ''}
+    </tbody>
+  </table>
+
+  <div class="footer">Labour Attendance App &bull; ${monthName} Cashbook Report</div>
+</body>
+</html>`;
+
+  // Open in new window and print as PDF
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => {
+    win.focus();
+    win.print();
+  };
+  showToast('PDF window open ho gaya!');
 }
 
 function showToast(msg, err=false) {
