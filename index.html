@@ -418,8 +418,11 @@ input,select,textarea{font-size:16px} /* prevent iOS zoom */
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbzrgzC29JvbpmSDlYH7dl7ocTIrwP6_F_YDaQumIs-08hLcOxPTUT2J7EqYjURoeDAUQA/exec';
+const SUPA_URL = 'https://ibxairxqihdeqxthwpng.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlieGFpcnhxaWhkZXF4dGh3cG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDY3NzIsImV4cCI6MjA5MjE4Mjc3Mn0.yGv9Pi9elzLBS9p31cUiE5z53lpNTVbQdVRhM4RlzdM';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 let workers = [];
 let attendance = {};
@@ -433,34 +436,17 @@ let attModalState = { wid: null, dk: null, type: 'P' };
 let authState = { mode: 'login' };
 let autoSyncTimer = null;
 
-function getUsers() {
-  try { return JSON.parse(localStorage.getItem('users') || '[]'); } catch (e) { return []; }
-}
-
-function setUsers(u) {
-  try { localStorage.setItem('users', JSON.stringify(u)); } catch (e) {}
-}
+// ── AUTH ──────────────────────────────────────────────────────────────────────
 
 function getSession() {
-  try { return JSON.parse(localStorage.getItem('session') || 'null'); } catch (e) { return null; }
+  try { return JSON.parse(localStorage.getItem('la_session') || 'null'); } catch(e) { return null; }
 }
-
 function setSession(s) {
-  try { localStorage.setItem('session', JSON.stringify(s)); } catch (e) {}
+  try { localStorage.setItem('la_session', JSON.stringify(s)); } catch(e) {}
 }
-
 function isAuthed() {
   const s = getSession();
-  if (!s || !s.uid) return false;
-  // session exists => treat as authed; server will validate on sync
-  return true;
-}
-
-function currentUser() {
-  const s = getSession();
-  if (!s || !s.uid) return null;
-  // best-effort local user info (offline fallback only)
-  return getUsers().find(u => u.id === s.uid) || null;
+  return !!(s && s.uid);
 }
 
 function showAuth() {
@@ -468,11 +454,9 @@ function showAuth() {
   document.getElementById('loading-overlay').classList.add('hide');
   switchAuth('login');
 }
-
 function hideAuth() {
   document.getElementById('auth').classList.add('hide');
 }
-
 function switchAuth(mode) {
   authState.mode = mode;
   document.getElementById('auth-tab-login').classList.toggle('active', mode === 'login');
@@ -480,109 +464,167 @@ function switchAuth(mode) {
   document.getElementById('auth-login').style.display = mode === 'login' ? '' : 'none';
   document.getElementById('auth-signup').style.display = mode === 'signup' ? '' : 'none';
 }
-
 function normPhone(p) {
   return (p || '').toString().replace(/\D/g, '').slice(-10);
 }
 
-function login() {
+async function login() {
   const phone = normPhone(document.getElementById('login-phone').value);
   const pin = (document.getElementById('login-pin').value || '').trim();
   if (phone.length < 10) { showToast('Valid phone number dalo', true); return; }
   if (pin.length < 4) { showToast('PIN dalo', true); return; }
-  remoteLogin(phone, pin);
+  try {
+    const { data, error } = await supa.from('users').select('*').eq('phone', phone).eq('pin', pin).single();
+    if (error || !data) throw new Error('Invalid phone or PIN');
+    setSession({ uid: data.id, name: data.name, phone: data.phone });
+    afterAuthInit();
+  } catch(e) {
+    showToast('Login failed: ' + e.message, true);
+  }
 }
 
-function signup() {
+async function signup() {
   const name = (document.getElementById('signup-name').value || '').trim();
   const phone = normPhone(document.getElementById('signup-phone').value);
   const pin = (document.getElementById('signup-pin').value || '').trim();
   if (!name) { showToast('Name dalo', true); return; }
   if (phone.length < 10) { showToast('Valid phone number dalo', true); return; }
   if (!/^\d{4,6}$/.test(pin)) { showToast('PIN 4-6 digits rakho', true); return; }
-  remoteSignup(name, phone, pin);
+  try {
+    // Check if phone exists
+    const { data: existing } = await supa.from('users').select('id').eq('phone', phone).maybeSingle();
+    if (existing) { showToast('Ye phone pehle se registered hai', true); return; }
+    const uid = 'u' + Date.now();
+    const { error } = await supa.from('users').insert({ id: uid, name, phone, pin });
+    if (error) throw error;
+    setSession({ uid, name, phone });
+    afterAuthInit();
+  } catch(e) {
+    showToast('Signup failed: ' + e.message, true);
+  }
 }
 
 function logout() {
   setSession(null);
+  stopAutoSync();
+  workers = []; attendance = {}; notes = {}; overtime = {}; advances = {}; timeLogs = {};
   document.getElementById('user-name').textContent = '';
   showAuth();
 }
 
-async function remoteLogin(phone, pin) {
-  try {
-    // Use GET with params for login — avoids CORS issue
-    const url = API + '?action=login&phone=' + encodeURIComponent(phone) + '&pin=' + encodeURIComponent(pin) + '&t=' + Date.now();
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    const u = data.user;
-    // Save user locally for offline fallback
-    const users = getUsers();
-    if (!users.find(x => x.id === u.uid)) {
-      users.push({ id: u.uid, name: u.name, phone: u.phone, pin: pin });
-      setUsers(users);
-    }
-    setSession({ uid: u.uid, at: Date.now() });
-    afterAuthInit();
-  } catch (e) {
-    // offline fallback: local users
-    const u = getUsers().find(x => x.phone === phone && x.pin === pin);
-    if (!u) { showToast('Login failed — internet check karo ya pehle signup karo', true); return; }
-    setSession({ uid: u.id, at: Date.now() });
-    afterAuthInit();
-  }
-}
-
-async function remoteSignup(name, phone, pin) {
-  try {
-    const url = API + '?action=signup&name=' + encodeURIComponent(name) + '&phone=' + encodeURIComponent(phone) + '&pin=' + encodeURIComponent(pin) + '&t=' + Date.now();
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    const u = data.user;
-    // Save locally for offline
-    const users = getUsers();
-    if (!users.find(x => x.id === u.uid)) {
-      users.push({ id: u.uid, name: u.name, phone: u.phone, pin: pin });
-      setUsers(users);
-    }
-    setSession({ uid: u.uid, at: Date.now() });
-    afterAuthInit();
-  } catch (e) {
-    // offline fallback: create local user
-    const users = getUsers();
-    if (users.some(x => x.phone === phone)) { showToast('Ye phone pehle se registered hai', true); return; }
-    const u = { id: 'u' + Date.now(), name, phone, pin, createdAt: Date.now() };
-    users.push(u);
-    setUsers(users);
-    setSession({ uid: u.id, at: Date.now() });
-    afterAuthInit();
-  }
-}
-
 async function afterAuthInit() {
   hideAuth();
-  // Show whatever we have locally; server-backed name will show on next login/signup
   const s = getSession();
-  document.getElementById('user-name').textContent = s && s.uid ? ('Account • ' + s.uid) : '';
+  document.getElementById('user-name').textContent = s ? (s.name + ' • ' + s.phone) : '';
   document.getElementById('loading-overlay').classList.remove('hide');
-  await loadFromSheets();
+  await loadFromSupabase();
   document.getElementById('loading-overlay').classList.add('hide');
   renderAttendance();
   renderSummary();
   renderWorkerList();
   startAutoSync();
-  showToast('Welcome!');
+  showToast('Welcome ' + (s ? s.name : '') + '!');
+}
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+
+function saveLocal() {
+  try {
+    const uid = (getSession() || {}).uid || 'anon';
+    localStorage.setItem('lw_'+uid, JSON.stringify(workers));
+    localStorage.setItem('la_'+uid, JSON.stringify(attendance));
+    localStorage.setItem('ln_'+uid, JSON.stringify(notes));
+    localStorage.setItem('lo_'+uid, JSON.stringify(overtime));
+    localStorage.setItem('ladv_'+uid, JSON.stringify(advances));
+    localStorage.setItem('lt_'+uid, JSON.stringify(timeLogs));
+  } catch(e) {}
+}
+
+function loadLocal() {
+  try {
+    const uid = (getSession() || {}).uid || 'anon';
+    workers    = JSON.parse(localStorage.getItem('lw_'+uid)   || '[]');
+    attendance = JSON.parse(localStorage.getItem('la_'+uid)   || '{}');
+    notes      = JSON.parse(localStorage.getItem('ln_'+uid)   || '{}');
+    overtime   = JSON.parse(localStorage.getItem('lo_'+uid)   || '{}');
+    advances   = JSON.parse(localStorage.getItem('ladv_'+uid) || '{}');
+    timeLogs   = JSON.parse(localStorage.getItem('lt_'+uid)   || '{}');
+  } catch(e) {
+    workers=[]; attendance={}; notes={}; overtime={}; advances={}; timeLogs={};
+  }
+}
+
+async function loadFromSupabase() {
+  try {
+    const uid = (getSession() || {}).uid;
+    if (!uid) throw new Error('Not logged in');
+    const { data, error } = await supa.from('labour_data').select('*').eq('uid', uid).maybeSingle();
+    if (error) throw error;
+    if (data) {
+      workers    = data.workers    || [];
+      attendance = data.attendance || {};
+      notes      = data.notes      || {};
+      overtime   = data.overtime   || {};
+      advances   = data.advances   || {};
+      timeLogs   = data.time_logs  || {};
+    }
+    saveLocal();
+    setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
+    return true;
+  } catch(e) {
+    loadLocal();
+    setStatus('Offline mode — local data', 'err');
+    return false;
+  }
+}
+
+async function saveToSupabase() {
+  saveLocal();
+  setStatus('Saving...', '');
+  document.getElementById('sync-btn').classList.add('syncing');
+  try {
+    const uid = (getSession() || {}).uid;
+    if (!uid) throw new Error('Not logged in');
+    const payload = {
+      uid,
+      workers,
+      attendance,
+      notes,
+      overtime,
+      advances,
+      time_logs: timeLogs,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await supa.from('labour_data').upsert(payload, { onConflict: 'uid' });
+    if (error) throw error;
+    setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
+  } catch(e) {
+    setStatus('Save failed: ' + e.message, 'err');
+  }
+  document.getElementById('sync-btn').classList.remove('syncing');
+}
+
+function scheduleSave() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(saveToSupabase, 1500);
+}
+
+async function syncNow() {
+  document.getElementById('sync-btn').classList.add('syncing');
+  setStatus('Syncing...', '');
+  await loadFromSupabase();
+  document.getElementById('sync-btn').classList.remove('syncing');
+  renderAttendance();
+  renderSummary();
+  renderWorkerList();
+  showToast('Sync complete!');
 }
 
 function startAutoSync() {
   stopAutoSync();
   autoSyncTimer = setInterval(async () => {
-    if (!navigator.onLine) return;
-    // Agar koi pending save hai toh pull mat karo — data loss hoga
-    if (syncTimer) return;
-    await loadFromSheets();
+    if (!navigator.onLine || syncTimer) return;
+    await loadFromSupabase();
     renderAttendance();
     renderSummary();
     renderWorkerList();
@@ -596,13 +638,12 @@ function stopAutoSync() {
 
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && isAuthed() && navigator.onLine) {
-    // Pehle koi pending save complete karo
     if (syncTimer) {
       clearTimeout(syncTimer);
       syncTimer = null;
-      await saveToSheets();
+      await saveToSupabase();
     }
-    await loadFromSheets();
+    await loadFromSupabase();
     renderAttendance();
     renderSummary();
     renderWorkerList();
@@ -611,138 +652,34 @@ document.addEventListener('visibilitychange', async () => {
 
 window.addEventListener('online', async () => {
   if (isAuthed()) {
-    await loadFromSheets();
+    await saveToSupabase();
+    await loadFromSupabase();
     renderAttendance();
     renderSummary();
     renderWorkerList();
   }
 });
 
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
 function dateKey(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
-
 function fmtDate(d) {
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
 }
-
 function getInitials(name) {
   return name.trim().split(' ').map(n => n[0] ? n[0].toUpperCase() : '').slice(0,2).join('');
 }
-
 function setStatus(msg, type) {
   const el = document.getElementById('sync-status');
   el.textContent = msg;
-  el.className = 'sync-status' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
+  el.className = 'sync-status' + (type==='ok'?' ok':type==='err'?' err':'');
 }
 
-function saveLocal() {
-  try {
-    const uid = (getSession() && getSession().uid) ? getSession().uid : 'anon';
-    localStorage.setItem('lw_' + uid, JSON.stringify(workers));
-    localStorage.setItem('la_' + uid, JSON.stringify(attendance));
-    localStorage.setItem('ln_' + uid, JSON.stringify(notes));
-    localStorage.setItem('lo_' + uid, JSON.stringify(overtime));
-    localStorage.setItem('ladv_' + uid, JSON.stringify(advances));
-    localStorage.setItem('lt_' + uid, JSON.stringify(timeLogs));
-  } catch(e) {}
-}
-
-function loadLocal() {
-  try {
-    const uid = (getSession() && getSession().uid) ? getSession().uid : 'anon';
-    workers = JSON.parse(localStorage.getItem('lw_' + uid) || '[]');
-    attendance = JSON.parse(localStorage.getItem('la_' + uid) || '{}');
-    notes = JSON.parse(localStorage.getItem('ln_' + uid) || '{}');
-    overtime = JSON.parse(localStorage.getItem('lo_' + uid) || '{}');
-    advances = JSON.parse(localStorage.getItem('ladv_' + uid) || '{}');
-    timeLogs = JSON.parse(localStorage.getItem('lt_' + uid) || '{}');
-  } catch(e) {
-    workers = []; attendance = {}; notes = {}; overtime = {}; advances = {}; timeLogs = {};
-  }
-}
-
-async function loadFromSheets() {
-  try {
-    const s = getSession();
-    const uid = s && s.uid ? s.uid : '';
-    if (!uid) throw new Error('Missing uid');
-    const res = await fetch(API + '?t=' + Date.now() + '&uid=' + encodeURIComponent(uid));
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-
-    // Agar server pe advances empty hain but local mein hain — local ko preserve karo
-    const serverAdv = data.advances || {};
-    const localAdv = advances || {};
-    const mergedAdv = Object.assign({}, serverAdv);
-    // Local dates jo server pe nahi hain unhe merge karo
-    Object.keys(localAdv).forEach(dk => {
-      if (!mergedAdv[dk]) mergedAdv[dk] = {};
-      Object.keys(localAdv[dk]).forEach(wid => {
-        // Agar server pe 0 ya missing hai aur local pe value hai — local jeetega
-        if (!mergedAdv[dk][wid] && localAdv[dk][wid]) {
-          mergedAdv[dk][wid] = localAdv[dk][wid];
-        }
-      });
-    });
-
-    workers = data.workers || [];
-    attendance = data.attendance || {};
-    notes = data.notes || {};
-    overtime = data.overtime || {};
-    advances = mergedAdv;
-    timeLogs = data.timeLogs || {};
-    saveLocal();
-    setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
-    return true;
-  } catch(e) {
-    loadLocal();
-    setStatus('Offline mode — local data load hua', 'err');
-    return false;
-  }
-}
-
-async function saveToSheets() {
-  saveLocal();
-  setStatus('Saving...', '');
-  document.getElementById('sync-btn').classList.add('syncing');
-  try {
-    const s = getSession();
-    const uid = s && s.uid ? s.uid : '';
-    if (!uid) throw new Error('Missing uid');
-    const payload = JSON.stringify({ action: 'save', uid, workers, attendance, notes, overtime, advances, timeLogs });
-    // Use no-cors mode to avoid CORS preflight — Apps Script accepts this
-    await fetch(API, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: payload
-    });
-    // no-cors returns opaque response, assume success if no throw
-    setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
-  } catch(e) {
-    setStatus('Local mein save hua (internet check karo)', 'err');
-  }
-  document.getElementById('sync-btn').classList.remove('syncing');
-}
-
-function scheduleSave() {
-  clearTimeout(syncTimer);
-  syncTimer = setTimeout(saveToSheets, 1500);
-}
-
-async function syncNow() {
-  document.getElementById('sync-btn').classList.add('syncing');
-  setStatus('Syncing...', '');
-  await loadFromSheets();
-  document.getElementById('sync-btn').classList.remove('syncing');
-  renderAttendance();
-  renderSummary();
-  renderWorkerList();
-  showToast('Sync complete!');
-}
+// ── UI ────────────────────────────────────────────────────────────────────────
 
 function initUI() {
   document.getElementById('att-date-lbl').textContent = fmtDate(currentDate);
@@ -757,17 +694,15 @@ function initUI() {
     ms.appendChild(o);
   });
   const yr = new Date().getFullYear();
-  for (let y = yr; y >= yr - 3; y--) {
+  for (let y = yr; y >= yr-3; y--) {
     const o = document.createElement('option');
     o.value = y; o.textContent = y;
     if (y === yr) o.selected = true;
     ys.appendChild(o);
   }
-
   ws.innerHTML = '';
   const all = document.createElement('option');
-  all.value = 'ALL';
-  all.textContent = 'All workers';
+  all.value = 'ALL'; all.textContent = 'All workers';
   ws.appendChild(all);
 }
 
@@ -793,8 +728,8 @@ function markAll(status) {
   workers.forEach(w => { attendance[dk][w.id] = status; });
   scheduleSave();
   renderAttendance();
-  const labels = { P: 'Present', A: 'Absent', H: 'Half Day' };
-  showToast('Sab ' + labels[status] + ' mark ho gaye!');
+  const labels = { P:'Present', A:'Absent', H:'Half Day' };
+  showToast('Sab ' + (labels[status]||status) + ' mark ho gaye!');
 }
 
 function markAtt(wid, status) {
@@ -839,22 +774,22 @@ function toggleNote(wid) {
 
 function renderAttendance() {
   const dk = dateKey(currentDate);
-  const dayAtt = attendance[dk] || {};
-  const dayOt = overtime[dk] || {};
-  const dayAdv = advances[dk] || {};
-  const dayNote = notes[dk] || {};
+  const dayAtt  = attendance[dk] || {};
+  const dayOt   = overtime[dk]   || {};
+  const dayAdv  = advances[dk]   || {};
+  const dayNote = notes[dk]      || {};
   const list = document.getElementById('att-list');
   if (workers.length === 0) {
     list.innerHTML = '<div class="empty">Abhi koi worker nahi hai.<br><br>Workers tab mein jao aur pehle worker add karo.</div>';
     return;
   }
   list.innerHTML = workers.map(w => {
-    const s = dayAtt[w.id] || '';
-    const ot = dayOt[w.id] || 0;
-    const adv = dayAdv[w.id] || 0;
+    const s    = dayAtt[w.id]  || '';
+    const ot   = dayOt[w.id]   || 0;
+    const adv  = dayAdv[w.id]  || 0;
     const note = dayNote[w.id] || '';
-    const presentSel = (s === 'P' || s === 'PH' || s === 'PP') ? ' sel' : '';
-    const halfSel = (s === 'H') ? ' sel' : '';
+    const presentSel = (s==='P'||s==='PH'||s==='PP') ? ' sel' : '';
+    const halfSel    = s==='H' ? ' sel' : '';
     return `<div class="worker-card" data-wid="${w.id}">
       <div class="worker-top">
         <div class="avatar">${getInitials(w.name)}</div>
@@ -878,9 +813,9 @@ function renderAttendance() {
         <span class="ot-label">Advance (&#8377;):</span>
         <input type="number" class="adv-input" value="${adv}" min="0" step="1" onchange="updateAdvance('${w.id}',this.value)" placeholder="0">
       </div>
-      <button class="note-toggle" onclick="toggleNote('${w.id}')">+ Note / Advance likhna ho toh yahan</button>
-      <div class="worker-note${note ? ' show' : ''}" id="note-${w.id}">
-        <input class="note-input" type="text" placeholder="e.g. ₹200 advance liya, koi kaam ki baat..." value="${note.replace(/\"/g,'&quot;')}" oninput="updateNote('${w.id}',this.value)">
+      <button class="note-toggle" onclick="toggleNote('${w.id}')">+ Note likhna ho toh yahan</button>
+      <div class="worker-note${note?' show':''}" id="note-${w.id}">
+        <input class="note-input" type="text" placeholder="e.g. koi kaam ki baat..." value="${note.replace(/"/g,'&quot;')}" oninput="updateNote('${w.id}',this.value)">
       </div>
     </div>`;
   }).join('');
@@ -888,206 +823,121 @@ function renderAttendance() {
 
 function renderSummary() {
   const ws = document.getElementById('sum-worker');
-  const m = parseInt(document.getElementById('sum-month').value);
-  const y = parseInt(document.getElementById('sum-year').value);
-  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const m  = parseInt(document.getElementById('sum-month').value);
+  const y  = parseInt(document.getElementById('sum-year').value);
+  const selectedWid = ws ? ws.value : 'ALL';
+  const daysInMonth = new Date(y, m+1, 0).getDate();
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  if (workers.length === 0) {
-    document.getElementById('summary-report').innerHTML = '<div class="empty">Koi worker nahi hai.</div>';
-    return;
-  }
-
-  // refresh worker dropdown
-  const prev = ws.value || 'ALL';
-  ws.innerHTML = '';
-  const all = document.createElement('option');
-  all.value = 'ALL';
-  all.textContent = 'All workers';
-  ws.appendChild(all);
+  // Populate worker dropdown
+  ws.innerHTML = '<option value="ALL">All workers</option>';
   workers.forEach(w => {
     const o = document.createElement('option');
-    o.value = w.id;
-    o.textContent = w.name;
+    o.value = w.id; o.textContent = w.name;
+    if (w.id === selectedWid) o.selected = true;
     ws.appendChild(o);
   });
-  ws.value = workers.some(w => w.id === prev) ? prev : 'ALL';
 
-  const selectedId = ws.value;
+  const dayUnits = s => ({P:1,H:0.5,PH:1.5,PP:2})[s] || 0;
+  const filtered = selectedWid === 'ALL' ? workers : workers.filter(w => w.id === selectedWid);
 
-  const dayUnits = (s) => {
-    if (s === 'P') return 1;
-    if (s === 'H') return 0.5;
-    if (s === 'PH') return 1.5;
-    if (s === 'PP') return 2;
-    return 0;
-  };
-
-  const computeWorker = (w) => {
-    let pDays = 0, a = 0, wo = 0, otHrs = 0, advAmt = 0;
-    let units = 0;
-    let cP = 0, cH = 0, cPH = 0, cPP = 0;
-    const rows = [];
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dk = y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-      const s = (attendance[dk] || {})[w.id] || '';
-      const ot = ((overtime[dk] || {})[w.id] || 0);
-      const adv = ((advances[dk] || {})[w.id] || 0);
-      const u = dayUnits(s);
-      if (s === 'P') cP++;
-      else if (s === 'H') cH++;
-      else if (s === 'PH') cPH++;
-      else if (s === 'PP') cPP++;
-      if (u > 0) pDays++;
-      else if (s === 'A') a++;
-      else if (s === 'L') wo++;
-      units += u;
-      otHrs += ot;
-      advAmt += adv;
-      rows.push({ day: d, s, ot, adv });
+  let totalEarnings = 0, totalAdvances = 0;
+  const workerStats = filtered.map(w => {
+    let units=0, a=0, h=0, l=0, otHrs=0, advAmt=0, pDays=0;
+    for (let d=1; d<=daysInMonth; d++) {
+      const dk = y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const s  = (attendance[dk]||{})[w.id] || '';
+      const u  = dayUnits(s);
+      if (u>0) pDays++;
+      else if (s==='A') a++;
+      else if (s==='L') l++;
+      if (s==='H') h++;
+      units  += u;
+      otHrs  += ((overtime[dk]||{})[w.id] || 0);
+      advAmt += ((advances[dk]||{})[w.id]  || 0);
     }
     const basic = Math.round(units * w.wage);
-    const otPay = Math.round(otHrs * (w.otRate || 0));
+    const otPay = Math.round(otHrs * (w.otRate||0));
     const total = basic + otPay;
-    const net = total - Math.round(advAmt);
-    return { pDays, a, wo, units, cP, cH, cPH, cPP, otHrs, advAmt, basic, otPay, total, net, rows };
-  };
+    const net   = total - Math.round(advAmt);
+    totalEarnings += total;
+    totalAdvances += Math.round(advAmt);
+    return {w, pDays, a, h, l, otHrs, advAmt:Math.round(advAmt), basic, otPay, total, net};
+  });
 
-  const reportEl = document.getElementById('summary-report');
+  const netTotal = totalEarnings - totalAdvances;
+  const rpt = document.getElementById('summary-report');
 
-  if (selectedId === 'ALL') {
-    const allStats = workers.map(w => ({ w, ...computeWorker(w) }));
-    const totalEarnings = allStats.reduce((s, x) => s + x.total, 0);
-    const totalAdv = allStats.reduce((s, x) => s + Math.round(x.advAmt), 0);
-    reportEl.innerHTML = `
-      <div class="report-head">
-        <div class="report-head-top">
-          <div class="avatar">LR</div>
-          <div>
-            <div class="worker-name">Labor Report</div>
-            <div class="report-sub">${months[m]} ${y}</div>
-          </div>
-        </div>
-        <div class="report-sub">All workers combined</div>
-      </div>
-
-      <div class="pay-card">
-        <div class="pay-row"><span class="pay-lbl">Total Earnings</span><span class="pay-val pay-total">&#8377;${totalEarnings.toLocaleString('en-IN')}</span></div>
-        <div class="pay-row"><span class="pay-lbl">Advance Payments</span><span class="pay-val neg">-&#8377;${totalAdv.toLocaleString('en-IN')}</span></div>
-        <div class="pay-row"><span class="pay-lbl">Net Payment</span><span class="pay-val pay-net">&#8377;${(totalEarnings - totalAdv).toLocaleString('en-IN')}</span></div>
-      </div>
-
-      <div class="section-title">Worker-wise breakdown</div>
-      ${allStats.map(x => `
-        <div class="worker-stat">
-          <div class="ws-top">
-            <div class="avatar">${getInitials(x.w.name)}</div>
-            <div>
-              <div class="ws-name">${x.w.name}</div>
-              <div class="ws-wage">${x.w.role} &bull; &#8377;${x.w.wage}/day</div>
-            </div>
-          </div>
-          <div class="ws-counts">
-            <span style="color:#0F6E56">&#9679; ${x.pDays} Present</span>
-            <span style="color:#993C1D">&#9679; ${x.a} Absent</span>
-            <span style="color:#185FA5">&#9679; ${x.wo} Week Off</span>
-            ${x.otHrs > 0 ? `<span style="color:#666">+ ${x.otHrs}hr OT</span>` : ''}
-            ${x.advAmt > 0 ? `<span style="color:#993C1D">- &#8377;${Math.round(x.advAmt)}</span>` : ''}
-          </div>
-          <div class="ws-salary">
-            <span class="ws-salary-lbl">Net Payment</span>
-            <span class="ws-salary-val">&#8377;${x.net.toLocaleString('en-IN')}</span>
-          </div>
-        </div>
-      `).join('')}
-    `;
+  if (workers.length === 0) {
+    rpt.innerHTML = '<div class="empty">Koi worker nahi hai.</div>';
     return;
   }
 
-  const w = workers.find(x => x.id === selectedId) || workers[0];
-  const r = computeWorker(w);
-
-  const statusPill = (s) => {
-    if (s === 'P') return `<span class="pill p">P</span>`;
-    if (s === 'A') return `<span class="pill a">A</span>`;
-    if (s === 'H') return `<span class="pill h">&#189;</span>`;
-    if (s === 'PH') return `<span class="pill p">P+&#189;</span>`;
-    if (s === 'PP') return `<span class="pill p">P+P</span>`;
-    if (s === 'L') return `<span class="pill l">WO</span>`;
-    return `<span style="color:#aaa">-</span>`;
-  };
-
-  reportEl.innerHTML = `
+  rpt.innerHTML = `
     <div class="report-head">
       <div class="report-head-top">
-        <div class="avatar">${getInitials(w.name)}</div>
+        <div class="avatar">${selectedWid==='ALL'?'LR':getInitials(filtered[0]?.name||'?')}</div>
         <div>
-          <div class="worker-name">${w.name} - Report</div>
-          <div class="report-sub">${months[m]} ${y}</div>
+          <div style="font-weight:700;font-size:15px">${selectedWid==='ALL'?'Labor Report':'Labor Report'}</div>
+          <div class="report-sub">${months[m]} ${y} &bull; ${selectedWid==='ALL'?'All workers combined':filtered[0]?.name}</div>
         </div>
       </div>
-      <div class="report-sub">Role: ${w.role} &nbsp;|&nbsp; Salary: &#8377;${w.wage} per day</div>
     </div>
 
-    <div class="card-title">Attendance Summary</div>
-    <div class="report-grid">
-      <div class="rep-metric">
-        <div class="rep-ico p">&#10003;</div>
-        <div class="rep-val" style="color:#0F6E56">${r.pDays}</div>
-        <div class="rep-lbl">Present</div>
-      </div>
-      <div class="rep-metric">
-        <div class="rep-ico a">&#10007;</div>
-        <div class="rep-val" style="color:#993C1D">${r.a}</div>
-        <div class="rep-lbl">Absent</div>
-      </div>
-      <div class="rep-metric">
-        <div class="rep-ico o">OT</div>
-        <div class="rep-val" style="color:#185FA5">${r.otHrs % 1 === 0 ? r.otHrs : r.otHrs.toFixed(1)}h</div>
-        <div class="rep-lbl">OT</div>
-      </div>
-      <div class="rep-metric">
-        <div class="rep-ico m">&#128179;</div>
-        <div class="rep-val" style="color:#444">&#8377;${Math.round(r.advAmt).toLocaleString('en-IN')}</div>
-        <div class="rep-lbl">Advance</div>
-      </div>
-    </div>
-    <div class="rep-subline"><b>${r.wo}</b> Week Off</div>
-    <div class="rep-subline">
-      Breakdown: <b>P</b> ${r.cP}, <b>½</b> ${r.cH}, <b>P+½</b> ${r.cPH}, <b>P+P</b> ${r.cPP}
-      &nbsp;|&nbsp; <b>Total units</b> ${r.units % 1 === 0 ? r.units : r.units.toFixed(1)}
-    </div>
-
-    <div class="card-title">Payment Summary</div>
     <div class="pay-card">
-      <div class="pay-row"><span class="pay-lbl">Basic Earnings</span><span class="pay-val">&#8377;${r.basic.toLocaleString('en-IN')}</span></div>
-      <div class="pay-row"><span class="pay-lbl">Overtime Earnings</span><span class="pay-val">&#8377;${r.otPay.toLocaleString('en-IN')}</span></div>
-      <div class="pay-row"><span class="pay-lbl">Total Earnings</span><span class="pay-val pay-total">&#8377;${r.total.toLocaleString('en-IN')}</span></div>
-      <div class="pay-row"><span class="pay-lbl">Advance Payments</span><span class="pay-val neg">-&#8377;${Math.round(r.advAmt).toLocaleString('en-IN')}</span></div>
-      <div class="pay-row"><span class="pay-lbl">Net Payment</span><span class="pay-val pay-net">&#8377;${r.net.toLocaleString('en-IN')}</span></div>
+      <div class="pay-row"><span class="pay-lbl">Total Earnings</span><span class="pay-val">&#8377;${totalEarnings.toLocaleString('en-IN')}</span></div>
+      <div class="pay-row"><span class="pay-lbl">Advance Payments</span><span class="pay-val neg">-&#8377;${totalAdvances.toLocaleString('en-IN')}</span></div>
+      <div class="pay-row pay-total pay-net"><span class="pay-lbl">Net Payment</span><span class="pay-val">&#8377;${netTotal.toLocaleString('en-IN')}</span></div>
     </div>
-    <div class="report-sub">Final: (${r.units % 1 === 0 ? r.units : r.units.toFixed(1)} × &#8377;${w.wage}) + &#8377;${r.otPay} − &#8377;${Math.round(r.advAmt)} = <b>&#8377;${r.net.toLocaleString('en-IN')}</b></div>
 
-    <div class="card-title">Attendance Details</div>
-    <div class="tbl-card">
+    <div class="card-title">WORKER-WISE BREAKDOWN</div>
+    ${workerStats.map(st => `
+      <div class="report-head" style="margin-bottom:10px">
+        <div class="report-head-top">
+          <div class="avatar">${getInitials(st.w.name)}</div>
+          <div>
+            <div style="font-weight:700;font-size:14px">${st.w.name}</div>
+            <div class="report-sub">${st.w.role} &bull; &#8377;${st.w.wage}/day</div>
+          </div>
+        </div>
+        <div class="report-sub" style="margin-top:6px">
+          &bull; ${st.pDays} Present &bull; ${st.a} Absent &bull; ${st.h > 0 ? st.h + ' Half' : ''} &bull; ${st.l} Week Off
+          ${st.advAmt > 0 ? ' &bull; -&#8377;' + st.advAmt.toLocaleString('en-IN') : ''}
+        </div>
+        <div class="pay-card" style="margin:10px 0 0">
+          <div class="pay-row"><span class="pay-lbl">Basic Earnings</span><span class="pay-val">&#8377;${st.basic.toLocaleString('en-IN')}</span></div>
+          ${st.otPay>0?`<div class="pay-row"><span class="pay-lbl">Overtime</span><span class="pay-val">&#8377;${st.otPay.toLocaleString('en-IN')}</span></div>`:''}
+          ${st.advAmt>0?`<div class="pay-row"><span class="pay-lbl">Advance</span><span class="pay-val neg">-&#8377;${st.advAmt.toLocaleString('en-IN')}</span></div>`:''}
+          <div class="pay-row pay-net"><span class="pay-lbl">Net Payment</span><span class="pay-val">&#8377;${st.net.toLocaleString('en-IN')}</span></div>
+        </div>
+      </div>
+    `).join('')}
+
+    <div class="tbl-card" style="margin-top:14px">
       <table class="tbl">
-        <thead>
-          <tr>
-            <th style="width:34%">Date</th>
-            <th style="width:22%">Status</th>
-            <th style="width:22%">OT Hrs</th>
-            <th style="width:22%">Advance</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Date</th><th>Status</th><th>OT Hrs</th><th>Advance</th></tr></thead>
         <tbody>
-          ${r.rows.map(row => `
-            <tr>
-              <td>${String(row.day).padStart(2,'0')} ${months[m].slice(0,3)}</td>
-              <td>${statusPill(row.s)}</td>
-              <td>${row.ot ? (row.ot % 1 === 0 ? row.ot : row.ot.toFixed(1)) : '-'}</td>
-              <td>${row.adv ? ('&#8377;' + Math.round(row.adv)) : '-'}</td>
-            </tr>
-          `).join('')}
+          ${(() => {
+            const rows = [];
+            for (let d=1; d<=daysInMonth; d++) {
+              const dk = y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+              filtered.forEach(w => {
+                const s   = (attendance[dk]||{})[w.id] || '';
+                const ot  = (overtime[dk]||{})[w.id]   || 0;
+                const adv = (advances[dk]||{})[w.id]   || 0;
+                if (!s && !ot && !adv) return;
+                const cls = s==='A'?'a':s==='H'?'h':s==='L'?'l':'p';
+                const lbl = {P:'P',A:'A',H:'½',PH:'P+½',PP:'P+P',L:'L'}[s]||s;
+                rows.push(`<tr>
+                  <td>${d} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]}</td>
+                  <td><span class="pill ${cls}">${lbl}</span></td>
+                  <td>${ot>0?ot+'h':'-'}</td>
+                  <td>${adv>0?'&#8377;'+adv.toLocaleString('en-IN'):'-'}</td>
+                </tr>`);
+              });
+            }
+            return rows.join('') || '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px">Is mahine koi attendance nahi</td></tr>';
+          })()}
         </tbody>
       </table>
     </div>
@@ -1107,34 +957,33 @@ function renderWorkerList() {
       <div class="avatar">${getInitials(w.name)}</div>
       <div class="wli-info">
         <div class="wli-name">${w.name}</div>
-        <div class="wli-sub">${w.role} &bull; &#8377;${w.wage}/day &bull; OT &#8377;${w.otRate || 0}/hr</div>
+        <div class="wli-sub">${w.role} &bull; &#8377;${w.wage}/day &bull; OT &#8377;${w.otRate||0}/hr</div>
       </div>
       <div class="wli-actions">
-        <button class="wli-report" onclick="openWorkerReport('${w.id}')">Report</button>
         <button class="wli-del" onclick="deleteWorker('${w.id}')">Hata do</button>
       </div>
     </div>`).join('');
 }
 
 function addWorker() {
-  const name = document.getElementById('w-name').value.trim();
-  const role = document.getElementById('w-role').value.trim();
-  const wage = parseFloat(document.getElementById('w-wage').value) || 0;
+  const name   = document.getElementById('w-name').value.trim();
+  const role   = document.getElementById('w-role').value.trim();
+  const wage   = parseFloat(document.getElementById('w-wage').value)   || 0;
   const otRate = parseFloat(document.getElementById('w-ot').value) || 0;
-  if (!name) { showToast('Naam bharo pehle!', true); return; }
-  if (wage <= 0) { showToast('Daily wage bharo!', true); return; }
-  workers.push({ id: 'w' + Date.now(), name, role: role || 'Worker', wage, otRate });
+  if (!name)   { showToast('Naam bharo pehle!', true); return; }
+  if (wage<=0) { showToast('Daily wage bharo!', true); return; }
+  workers.push({ id:'w'+Date.now(), name, role:role||'Worker', wage, otRate });
   scheduleSave();
-  ['w-name','w-role','w-wage','w-ot'].forEach(id => document.getElementById(id).value = '');
+  ['w-name','w-role','w-wage','w-ot'].forEach(id => document.getElementById(id).value='');
   renderWorkerList();
   renderAttendance();
   showToast(name + ' add ho gaya!');
 }
 
 function deleteWorker(id) {
-  const w = workers.find(x => x.id === id);
-  if (!confirm((w ? w.name : 'Is worker') + ' ko remove karna chahte ho?')) return;
-  workers = workers.filter(w => w.id !== id);
+  const w = workers.find(x => x.id===id);
+  if (!confirm((w?w.name:'Is worker') + ' ko remove karna chahte ho?')) return;
+  workers = workers.filter(w => w.id!==id);
   scheduleSave();
   renderWorkerList();
   renderAttendance();
@@ -1143,157 +992,112 @@ function deleteWorker(id) {
 
 function exportCSV() {
   const sw = document.getElementById('sum-worker');
-  const m = parseInt(document.getElementById('sum-month').value);
-  const y = parseInt(document.getElementById('sum-year').value);
-  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const m  = parseInt(document.getElementById('sum-month').value);
+  const y  = parseInt(document.getElementById('sum-year').value);
+  const daysInMonth = new Date(y,m+1,0).getDate();
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  let csv = 'Worker Name,Role,Daily Wage (Rs)';
-  for (let d = 1; d <= daysInMonth; d++) csv += ',' + d;
-  csv += ',Present,Absent,Half Day,Leave,OT Hours,Advance (Rs),Total Salary (Rs),Net Payment (Rs)\\n';
-
-  const selected = sw && sw.value && sw.value !== 'ALL'
-    ? workers.filter(w => w.id === sw.value)
-    : workers;
-
+  const selected = sw&&sw.value&&sw.value!=='ALL' ? workers.filter(w=>w.id===sw.value) : workers;
+  let csv = 'Worker Name,Role,Daily Wage';
+  for (let d=1;d<=daysInMonth;d++) csv+=','+d;
+  csv+=',Present Days,Absent,OT Hours,Advance,Total Salary,Net Payment\n';
   selected.forEach(w => {
-    let row = `${w.name},${w.role},${w.wage}`;
-    let pDays = 0, a = 0, h = 0, l = 0, otHrs = 0;
-    let units = 0;
-    let advAmt = 0;
-    const dayUnits = (s) => {
-      if (s === 'P') return 1;
-      if (s === 'H') return 0.5;
-      if (s === 'PH') return 1.5;
-      if (s === 'PP') return 2;
-      return 0;
-    };
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dk = y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-      const s = (attendance[dk] || {})[w.id] || '-';
-      row += ',' + s;
-      const u = dayUnits(s);
-      units += u;
-      if (u > 0) pDays++;
-      else if (s === 'A') a++;
-      else if (s === 'H') h++;
-      else if (s === 'L') l++;
-      otHrs += ((overtime[dk] || {})[w.id] || 0);
-      advAmt += ((advances[dk] || {})[w.id] || 0);
+    let row=`${w.name},${w.role},${w.wage}`;
+    let units=0,a=0,otHrs=0,advAmt=0,pDays=0;
+    for (let d=1;d<=daysInMonth;d++) {
+      const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const s=(attendance[dk]||{})[w.id]||'-';
+      row+=','+s;
+      const u=({P:1,H:0.5,PH:1.5,PP:2})[s]||0;
+      if(u>0)pDays++;
+      else if(s==='A')a++;
+      units+=u;
+      otHrs+=((overtime[dk]||{})[w.id]||0);
+      advAmt+=((advances[dk]||{})[w.id]||0);
     }
-    const sal = Math.round((units * w.wage) + (otHrs * (w.otRate || 0)));
-    const adv = Math.round(advAmt);
-    const net = sal - adv;
-    row += `,${pDays},${a},${h},${l},${otHrs},${adv},${sal},${net}\\n`;
-    csv += row;
+    const sal=Math.round(units*w.wage+otHrs*(w.otRate||0));
+    const net=sal-Math.round(advAmt);
+    row+=`,${pDays},${a},${otHrs},${Math.round(advAmt)},${sal},${net}\n`;
+    csv+=row;
   });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `Attendance_${months[m]}_${y}.csv`;
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Attendance_${months[m]}_${y}.csv`;
   a.click();
   showToast('CSV export ho gaya!');
 }
 
 function generateSharePDF() {
-  try {
-    window.print();
-    showToast('Print dialog open — Save as PDF');
-  } catch (e) {
-    showToast('PDF generate nahi hua (browser check karo)', true);
-  }
+  try { window.print(); showToast('Print dialog open — Save as PDF'); }
+  catch(e) { showToast('PDF generate nahi hua', true); }
 }
 
-function openWorkerReport(wid) {
-  // switch tab
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(s => s.classList.remove('active'));
-  document.getElementById('tab-summary').classList.add('active');
-  document.querySelectorAll('.tab')[1].classList.add('active');
-
-  // set worker and render
-  const ws = document.getElementById('sum-worker');
-  if (ws) ws.value = wid;
-  renderSummary();
-}
-
-function openAttModal(wid, fallbackType = 'P') {
+function openAttModal(wid, fallbackType='P') {
   const dk = dateKey(currentDate);
   attModalState.wid = wid;
-  attModalState.dk = dk;
-
-  const w = workers.find(x => x.id === wid);
-  document.getElementById('am-title').textContent = w ? ('Mark Present - ' + w.name) : 'Mark Present';
-  document.getElementById('am-date').textContent = fmtDate(currentDate);
-
-  const existingType = ((attendance[dk] || {})[wid]) || fallbackType;
-  const existingNote = ((notes[dk] || {})[wid]) || '';
-  const tl = ((timeLogs[dk] || {})[wid]) || {};
-
-  document.getElementById('am-in').value = tl.in || '';
-  document.getElementById('am-out').value = tl.out || '';
+  attModalState.dk  = dk;
+  const w = workers.find(x => x.id===wid);
+  document.getElementById('am-title').textContent = w ? ('Mark Present - '+w.name) : 'Mark Present';
+  document.getElementById('am-date').textContent  = fmtDate(currentDate);
+  const existingType = ((attendance[dk]||{})[wid]) || fallbackType;
+  const existingNote = ((notes[dk]||{})[wid]) || '';
+  const tl = ((timeLogs[dk]||{})[wid]) || {};
+  document.getElementById('am-in').value   = tl.in  || '';
+  document.getElementById('am-out').value  = tl.out || '';
   document.getElementById('am-note').value = existingNote;
-
-  setAttType(existingType === 'P' || existingType === 'H' || existingType === 'PH' || existingType === 'PP' ? existingType : fallbackType);
-
+  setAttType(['P','H','PH','PP'].includes(existingType) ? existingType : fallbackType);
   document.getElementById('att-modal').classList.remove('hide');
 }
 
 function setAttType(t) {
   attModalState.type = t;
   ['am-t-h','am-t-p','am-t-ph','am-t-pp'].forEach(id => document.getElementById(id).classList.remove('sel'));
-  const map = { H: 'am-t-h', P: 'am-t-p', PH: 'am-t-ph', PP: 'am-t-pp' };
-  const btn = map[t] ? document.getElementById(map[t]) : null;
-  if (btn) btn.classList.add('sel');
+  const map = {H:'am-t-h',P:'am-t-p',PH:'am-t-ph',PP:'am-t-pp'};
+  if (map[t]) document.getElementById(map[t]).classList.add('sel');
 }
 
 function hideAttModal() {
   document.getElementById('att-modal').classList.add('hide');
 }
 
-function closeAttModal(e) {
-  // backdrop click
-  hideAttModal();
-}
+function closeAttModal(e) { hideAttModal(); }
 
 function saveAttModal() {
-  const { wid, dk, type } = attModalState;
-  if (!wid || !dk) { hideAttModal(); return; }
+  const {wid, dk, type} = attModalState;
+  if (!wid||!dk) { hideAttModal(); return; }
   if (!attendance[dk]) attendance[dk] = {};
   attendance[dk][wid] = type;
-
   if (!notes[dk]) notes[dk] = {};
-  notes[dk][wid] = (document.getElementById('am-note').value || '').trim();
-
+  notes[dk][wid] = (document.getElementById('am-note').value||'').trim();
   if (!timeLogs[dk]) timeLogs[dk] = {};
   timeLogs[dk][wid] = {
-    in: document.getElementById('am-in').value || '',
+    in:  document.getElementById('am-in').value  || '',
     out: document.getElementById('am-out').value || ''
   };
-
   scheduleSave();
   hideAttModal();
   renderAttendance();
   renderSummary();
 }
 
-function showToast(msg, err = false) {
+function showToast(msg, err=false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'toast show' + (err ? ' err' : '');
+  t.className = 'toast show' + (err?' err':'');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 async function init() {
   initUI();
-  if (!isAuthed()) {
-    showAuth();
-    return;
-  }
-  const u = currentUser();
-  document.getElementById('user-name').textContent = u ? (u.name + ' • ' + u.phone) : '';
-  await loadFromSheets();
+  if (!isAuthed()) { showAuth(); return; }
+  const s = getSession();
+  document.getElementById('user-name').textContent = s ? (s.name+' • '+s.phone) : '';
+  await loadFromSupabase();
   document.getElementById('loading-overlay').classList.add('hide');
   renderAttendance();
+  renderSummary();
+  renderWorkerList();
+  startAutoSync();
 }
 
 init();
