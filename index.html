@@ -51,6 +51,12 @@ input,select,textarea{font-size:16px}
 .labour-arrow{font-size:18px;color:#ccc}
 .fab{position:fixed;bottom:68px;right:16px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border:none;border-radius:16px;padding:14px 22px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(15,110,86,0.35);z-index:150;min-height:52px}
 .fab-ico{font-size:20px}
+.labour-date-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);margin-bottom:0}
+.labour-date-bar button{border:1px solid #e8e8e3;background:#f7f7f2;color:#333;padding:5px 14px;border-radius:8px;font-size:16px;cursor:pointer;min-height:36px}
+.labour-date-center{text-align:center;flex:1}
+.labour-date-main{font-size:15px;font-weight:800;color:#0f172a}
+.labour-date-sub{font-size:11px;color:#888;margin-top:1px}
+.labour-bulk-row{display:flex;gap:8px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--line);margin-bottom:10px}
 
 /* ── LABOUR DETAIL PAGE ───────────────────────────────────── */
 .detail-header{background:linear-gradient(135deg,#1565C0,#1976D2);padding:16px;padding-top:calc(16px + env(safe-area-inset-top));color:#fff;position:sticky;top:0;z-index:100}
@@ -356,6 +362,19 @@ input,select,textarea{font-size:16px}
 
   <!-- PAGE: LABOURS -->
   <div class="page active" id="page-labours">
+    <div class="labour-date-bar">
+      <button onclick="changeDate(-1)">&#8592;</button>
+      <div class="labour-date-center">
+        <div class="labour-date-main" id="labour-date-lbl"></div>
+        <div class="labour-date-sub" id="labour-date-sub"></div>
+      </div>
+      <button onclick="changeDate(1)">&#8594;</button>
+    </div>
+    <div class="labour-bulk-row">
+      <button class="bulk-btn ap" onclick="markAll('P')">&#10003; All Present</button>
+      <button class="bulk-btn ab" onclick="markAll('A')">&#10007; All Absent</button>
+      <button class="bulk-btn hd" onclick="markAll('H')">&#189; Half Day</button>
+    </div>
     <div class="labour-list" id="labour-list"></div>
     <button class="fab" onclick="showAddLabour()">
       <span class="fab-ico">&#43;&#128100;</span> Add Labour
@@ -469,7 +488,6 @@ input,select,textarea{font-size:16px}
 <!-- BOTTOM NAV -->
 <div class="bottom-nav" id="bottom-nav">
   <button class="bnav-btn active" id="bnav-labours" onclick="showPage('labours')"><span class="bnav-ico">&#128100;</span>Labours</button>
-  <button class="bnav-btn" id="bnav-attendance" onclick="showPage('attendance')"><span class="bnav-ico">&#128197;</span>Attendance</button>
   <button class="bnav-btn" id="bnav-summary" onclick="showPage('summary')"><span class="bnav-ico">&#128202;</span>Summary</button>
   <button class="bnav-btn" id="bnav-cashbook" onclick="showPage('cashbook')"><span class="bnav-ico">&#128180;</span>Cashbook</button>
 </div>
@@ -826,7 +844,7 @@ function setStatus(msg,type){
 function dayUnits(s){ return ({P:1,H:0.5,PH:1.5,PP:2})[s]||0; }
 
 // ── NAVIGATION ────────────────────────────────────────────────
-const navPages = ['labours','attendance','summary','cashbook'];
+const navPages = ['labours','summary','cashbook'];
 function showPage(page){
   // Hide all pages
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -837,7 +855,7 @@ function showPage(page){
   currentPage = page;
   document.getElementById('bottom-nav').style.display = navPages.includes(page)?'flex':'none';
   // Render
-  if(page==='labours') renderLabourList();
+  if(page==='labours'){ renderLabourList(); }
   if(page==='attendance') renderAttendance();
   if(page==='summary') renderSummary();
   if(page==='cashbook') renderCashbook();
@@ -847,19 +865,43 @@ function refreshCurrentPage(){ showPage(currentPage); }
 
 // ── LABOURS LIST ──────────────────────────────────────────────
 function renderLabourList(){
+  const dk = dateKey(currentDate);
+  const dayAtt = attendance[dk] || {};
   const list = document.getElementById('labour-list');
+
+  // Update date display
+  const dateLbl = document.getElementById('labour-date-lbl');
+  const dateSub = document.getElementById('labour-date-sub');
+  if(dateLbl){
+    const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    dateLbl.textContent = currentDate.getDate()+' '+months[currentDate.getMonth()]+' '+currentDate.getFullYear();
+    dateSub.textContent = days[currentDate.getDay()];
+  }
+
   if(workers.length===0){
     list.innerHTML='<div class="empty">Koi labour nahi hai.<br>+ Add Labour button se add karo.</div>';
     return;
   }
+
+  const badgeLabel={P:'P',A:'A',H:'½',PH:'P+½',PP:'P+P',L:'L',Off:'Off'};
+
   list.innerHTML = workers.map(w=>{
-    return `<div class="labour-card" onclick="openLabourDetail('${w.id}')">
-      <div class="labour-avatar">${getInitials(w.name)}</div>
-      <div class="labour-info">
+    const s = dayAtt[w.id] || '';
+    const bl = badgeLabel[s] || '';
+    const bc = s || 'none';
+    return `<div class="labour-card" style="position:relative">
+      <div class="labour-avatar" onclick="openLabourDetail('${w.id}')" style="cursor:pointer">${getInitials(w.name)}</div>
+      <div class="labour-info" onclick="openLabourDetail('${w.id}')" style="cursor:pointer">
         <div class="labour-name">${w.name}</div>
         <div class="labour-sub">${w.role} &bull; &#8377;${w.wage}/day</div>
       </div>
-      <span class="labour-arrow">&#8250;</span>
+      <div onclick="openAttModalFromAttTab('${w.id}')" style="cursor:pointer">
+        ${bl
+          ? `<div class="att-badge ${bc}" style="min-width:48px">${bl}</div>`
+          : `<div class="att-badge none" style="min-width:48px;font-size:11px">Mark</div>`
+        }
+      </div>
     </div>`;
   }).join('');
 }
@@ -1058,7 +1100,7 @@ function openDetailReport(){
 // ── ATTENDANCE ────────────────────────────────────────────────
 function changeDate(dir){
   currentDate.setDate(currentDate.getDate()+dir);
-  document.getElementById('att-date-lbl').textContent=fmtDate(currentDate);
+  document.getElementById('att-date-lbl') && (document.getElementById('att-date-lbl').textContent=fmtDate(currentDate));
   renderAttendance();
 }
 
@@ -1072,7 +1114,7 @@ function markAll(status){
 }
 
 function renderAttendance(){
-  document.getElementById('att-date-lbl').textContent=fmtDate(currentDate);
+  document.getElementById('att-date-lbl') && (document.getElementById('att-date-lbl').textContent=fmtDate(currentDate));
   const dk=dateKey(currentDate);
   const dayAtt=attendance[dk]||{};
   const list=document.getElementById('att-worker-list');
@@ -1131,7 +1173,7 @@ function saveAttModal(){
 
 // ── SUMMARY ───────────────────────────────────────────────────
 function initUI(){
-  document.getElementById('att-date-lbl').textContent=fmtDate(currentDate);
+  document.getElementById('att-date-lbl') && (document.getElementById('att-date-lbl').textContent=fmtDate(currentDate));
   cbDate=new Date(); detailMonth=new Date();
   document.getElementById('cb-month-lbl').textContent=fmtMonth(cbDate);
   const ms=document.getElementById('sum-month');
