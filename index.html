@@ -1346,7 +1346,7 @@ function generateWorkerPDF(w){
   const daysInMonth=new Date(y,m+1,0).getDate();
   const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  let units=0,aCount=0,otHrs=0,advAmt=0,pDays=0;
+  let units=0,aCount=0,weekOff=0,otHrs=0,advAmt=0;
   const rows=[];
   for(let d=1;d<=daysInMonth;d++){
     const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
@@ -1354,22 +1354,93 @@ function generateWorkerPDF(w){
     const ot=(overtime[dk]||{})[w.id]||0;
     const adv=(advances[dk]||{})[w.id]||0;
     const note=(notes[dk]||{})[w.id]||'';
-    const u=dayUnits(s); if(u>0) pDays++; else if(s==='A') aCount++;
-    units+=u; otHrs+=ot; advAmt+=adv;
-    if(s||ot||adv){
-      const lbl={P:'P',A:'A',H:'½',PH:'P+½',PP:'P+P',L:'L',Off:'Off'}[s]||'-';
-      const col=s==='A'?'#c0392b':s==='L'||s==='Off'?'#8e44ad':'#0F6E56';
-      rows.push(`<tr><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb">${d} ${months[m]}</td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb"><span style="background:${col}22;color:${col};padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700">${lbl}</span></td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb">${ot>0?ot+'h':'-'}</td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb;color:#1565C0">${adv>0?'&#8377;'+Math.round(adv).toLocaleString('en-IN'):'-'}</td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb;color:#888;font-size:12px">${note||'-'}</td></tr>`);
+    units+=dayUnits(s);
+    if(s==='A') aCount++;
+    if(s==='Off'||s==='L') weekOff++;
+    otHrs+=ot; advAmt+=adv;
+    // Show all days with any data OR all marked days
+    if(s){
+      const lbl={P:'P',A:'A',H:'P+½',PH:'P+½',PP:'P+P',L:'L',Off:'Off'}[s]||s;
+      const col=s==='A'?'#c0392b':s==='Off'||s==='L'?'#8e44ad':'#0F6E56';
+      rows.push(`<tr>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0eb;font-size:13px">${String(d).padStart(2,'0')} ${months[m]}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0eb"><span style="background:${col}20;color:${col};padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700">${lbl}</span></td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0eb;font-size:13px">${ot>0?ot+'h':'-'}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0eb;font-size:13px;color:${adv>0?'#1565C0':'#aaa'}">${adv>0?'&#8377;'+Math.round(adv).toLocaleString('en-IN'):'-'}</td>
+      </tr>`);
     }
   }
+  const pDisplay = units%1===0 ? units : units.toFixed(1);
   const basic=Math.round(units*w.wage), otPay=Math.round(otHrs*(w.otRate||0)), total=basic+otPay, net=total-Math.round(advAmt);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Report - ${w.name}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:28px;color:#0f172a;background:#fff}.hdr{background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border-radius:12px;padding:18px 22px;margin-bottom:20px}.hdr h1{font-size:20px;font-weight:800;margin-bottom:3px}.hdr p{font-size:12px;opacity:0.85}.hdr-top{display:flex;justify-content:space-between}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.box{border:1px solid #e8e8e3;border-radius:10px;padding:12px;text-align:center}.box-val{font-size:20px;font-weight:800;margin-bottom:3px}.box-lbl{font-size:11px;color:#888}.pay{border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin-bottom:20px}.pay-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f0;font-size:13px}.pay-row:last-child{border-bottom:none}.pay-net{font-size:15px;font-weight:800;color:#0F6E56}table{width:100%;border-collapse:collapse}th{background:#f0f4f8;color:#1565C0;text-align:left;padding:10px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #e8e8e3}@media print{body{padding:16px}}</style></head><body>
-  <div class="hdr"><div class="hdr-top"><div><h1>&#128196; Labour Report</h1><p>${monthNames[m]} ${y} &bull; ${w.role} &bull; &#8377;${w.wage}/day</p></div><div style="text-align:right;font-size:12px;opacity:0.85">${w.name}<br>${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div></div></div>
-  <div class="grid"><div class="box"><div class="box-val" style="color:#0F6E56">${pDays}</div><div class="box-lbl">Present</div></div><div class="box"><div class="box-val" style="color:#c0392b">${aCount}</div><div class="box-lbl">Absent</div></div><div class="box"><div class="box-val" style="color:#e67e00">${otHrs}h</div><div class="box-lbl">OT Hours</div></div><div class="box"><div class="box-val" style="color:#1565C0">&#8377;${Math.round(advAmt).toLocaleString('en-IN')}</div><div class="box-lbl">Advance</div></div></div>
-  <div class="pay"><div class="pay-row"><span>Basic Earnings</span><span>&#8377;${basic.toLocaleString('en-IN')}</span></div>${otPay>0?`<div class="pay-row"><span>Overtime</span><span>&#8377;${otPay.toLocaleString('en-IN')}</span></div>`:''}<div class="pay-row"><span>Total Earnings</span><span>&#8377;${total.toLocaleString('en-IN')}</span></div>${Math.round(advAmt)>0?`<div class="pay-row"><span>Advance</span><span style="color:#c0392b">-&#8377;${Math.round(advAmt).toLocaleString('en-IN')}</span></div>`:''}<div class="pay-row pay-net"><span>Net Payment</span><span>&#8377;${net.toLocaleString('en-IN')}</span></div></div>
-  <table><thead><tr><th>Date</th><th>Status</th><th>OT Hrs</th><th>Advance</th><th>Note</th></tr></thead><tbody>${rows.join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa">Koi attendance nahi</td></tr>'}</tbody></table>
-  </body></html>`;
-  const win=window.open('','_blank'); win.document.write(html); win.document.close(); win.onload=()=>{ win.focus(); win.print(); };
+  const advRound = Math.round(advAmt);
+
+  const html=`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Labour Report - ${w.name}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;padding:24px;color:#0f172a;background:#fff;font-size:13px}
+.info-card{background:#e8f0fe;border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.info-title{color:#1565C0;font-size:14px;font-weight:800;margin-bottom:8px}
+.info-row{display:flex;gap:8px;margin-bottom:4px;font-size:13px}
+.info-lbl{color:#555;min-width:60px}
+.info-val{font-weight:700}
+.section-title{color:#1565C0;font-size:14px;font-weight:800;margin:18px 0 10px}
+.att-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin-bottom:4px}
+.att-box{text-align:center}
+.att-ico{font-size:22px;margin-bottom:4px}
+.att-val{font-size:22px;font-weight:800;margin-bottom:2px}
+.att-lbl{font-size:11px;color:#888}
+.pay-card{background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin-bottom:18px}
+.pay-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0eb;font-size:13px}
+.pay-row:last-child{border-bottom:none}
+.pay-bold{font-weight:800;font-size:14px}
+.pay-net{font-weight:800;font-size:15px;color:#0F6E56}
+.pay-neg{color:#c0392b}
+table{width:100%;border-collapse:collapse}
+.tbl-hd{background:#e8f0fe}
+th{text-align:left;padding:9px 12px;font-size:12px;font-weight:700;color:#1565C0;border-bottom:2px solid #c5d8f6}
+td{padding:9px 12px;border-bottom:1px solid #f0f0eb;font-size:13px}
+@media print{body{padding:14px}}
+</style></head><body>
+
+<div class="info-card">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div class="info-title">Labor Report &nbsp;&nbsp; ${monthNames[m]} ${y}</div>
+      <div class="info-row"><span class="info-lbl">Name:</span><span class="info-val">${w.name}</span></div>
+      <div class="info-row"><span class="info-lbl">Salary:</span><span class="info-val">&#8377;${w.wage} per daily</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">Attendance Summary</div>
+<div class="att-grid">
+  <div class="att-box"><div class="att-ico" style="color:#0F6E56">&#10003;</div><div class="att-val" style="color:#0F6E56">${pDisplay}</div><div class="att-lbl">Present</div></div>
+  <div class="att-box"><div class="att-ico" style="color:#c0392b">&#10007;</div><div class="att-val" style="color:#c0392b">${aCount}</div><div class="att-lbl">Absent</div></div>
+  <div class="att-box"><div class="att-ico" style="color:#e67e00">&#9200;</div><div class="att-val" style="color:#e67e00">${otHrs}h</div><div class="att-lbl">OT</div></div>
+  <div class="att-box"><div class="att-ico" style="color:#8e44ad">&#128683;</div><div class="att-val" style="color:#8e44ad">${weekOff}</div><div class="att-lbl">Week Off</div></div>
+</div>
+
+<div class="section-title">Payment Summary</div>
+<div class="pay-card">
+  <div class="pay-row"><span>Basic Earnings</span><span>&#8377;${basic.toLocaleString('en-IN')}</span></div>
+  <div class="pay-row"><span>Overtime Earnings</span><span>&#8377;${otPay.toLocaleString('en-IN')}</span></div>
+  <div class="pay-row pay-bold"><span>Total Earnings</span><span>&#8377;${total.toLocaleString('en-IN')}</span></div>
+  ${advRound>0?`<div class="pay-row"><span>Advance Payments</span><span class="pay-neg">-&#8377;${advRound.toLocaleString('en-IN')}</span></div>`:''}
+  <div class="pay-row pay-net"><span>Net Payment</span><span>&#8377;${net.toLocaleString('en-IN')}</span></div>
+</div>
+
+<div class="section-title">Attendance Details</div>
+<table>
+  <thead class="tbl-hd"><tr><th>Date</th><th>Status</th><th>OT Hrs</th><th>Advance</th></tr></thead>
+  <tbody>${rows.join('')||'<tr><td colspan="4" style="text-align:center;padding:20px;color:#aaa">Koi attendance nahi</td></tr>'}</tbody>
+</table>
+
+</body></html>`;
+  const win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  win.onload=()=>{ win.focus(); win.print(); };
 }
 
 function exportCashbookPDF(){
