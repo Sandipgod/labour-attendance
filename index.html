@@ -169,19 +169,28 @@ input,select,textarea{font-size:16px}
 .expense-btn{background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff}
 .cb-pdf-btn{width:100%;padding:11px;background:none;border:1.5px solid var(--brand2);color:var(--brand);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:12px}
 .cb-section-lbl{font-size:11px;font-weight:700;color:#aaa;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:8px}
-.cb-txn{background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
-.cb-txn-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.cb-txn-dot.income{background:#E1F5EE;color:#0F6E56}
-.cb-txn-dot.expense{background:#FAECE7;color:#c0392b}
-.cb-txn-info{flex:1;min-width:0}
-.cb-txn-cat{font-size:13px;font-weight:700}
-.cb-txn-note{font-size:11px;color:#888;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cb-txn-date{font-size:11px;color:#aaa;margin-top:1px}
+.cb-txn{background:#fff;border-radius:0;padding:14px 16px;margin-bottom:0;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0eb;cursor:pointer;transition:background 0.1s}
+.cb-txn:first-child{border-radius:14px 14px 0 0}
+.cb-txn:last-child{border-radius:0 0 14px 14px;border-bottom:none}
+.cb-txn:only-child{border-radius:14px}
+.cb-txn:active{background:#f8fafc}
+.cb-txn-date-col{text-align:center;flex-shrink:0;width:36px}
+.cb-txn-date-num{font-size:18px;font-weight:800;color:#0f172a;line-height:1}
+.cb-txn-date-mon{font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;margin-top:1px}
+.cb-txn-info{flex:1;min-width:0;padding-left:4px}
+.cb-txn-desc{font-size:14px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cb-txn-type{font-size:12px;font-weight:600;margin-top:2px}
+.cb-txn-type.income{color:#0F6E56}
+.cb-txn-type.expense{color:#c0392b}
 .cb-txn-right{text-align:right;flex-shrink:0}
-.cb-txn-amt{font-size:15px;font-weight:800}
+.cb-txn-amt{font-size:16px;font-weight:800}
 .cb-txn-amt.income{color:#0F6E56}
 .cb-txn-amt.expense{color:#c0392b}
-.cb-txn-del{font-size:11px;color:#ccc;background:none;border:none;cursor:pointer;display:block;margin-top:3px;min-height:auto;padding:0}
+.cb-txn-del{display:none}
+/* Cashbook list wrapper */
+.cb-txn-list-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);margin-bottom:12px}
+.cb-list-hd{display:grid;grid-template-columns:36px 1fr auto;gap:12px;padding:10px 16px;background:#f0f4f8;border-bottom:1px solid #e8e8e3}
+.cb-list-hd span{font-size:12px;font-weight:700;color:#1565C0}
 
 /* ── ADD/EDIT LABOUR PAGE ─────────────────────────────────── */
 .form-page{padding:16px}
@@ -424,8 +433,12 @@ input,select,textarea{font-size:16px}
         <button class="cb-add-btn expense-btn" onclick="openTxnModal('expense')">- Expense</button>
       </div>
       <button class="cb-pdf-btn" onclick="exportCashbookPDF()">&#128221; Download PDF Report</button>
-      <div class="cb-section-lbl">Transactions</div>
-      <div id="cb-txn-list"></div>
+      <div class="cb-txn-list-card">
+        <div class="cb-list-hd">
+          <span>Date</span><span>Description</span><span>Amount</span>
+        </div>
+        <div id="cb-txn-list"></div>
+      </div>
     </div>
   </div>
 
@@ -524,6 +537,61 @@ input,select,textarea{font-size:16px}
     <div class="cb-modal-ft">
       <button class="btn-ghost" onclick="closeModal('txn-modal')">Cancel</button>
       <button class="btn-ok-income" id="txn-save-btn" onclick="saveTxn()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT TRANSACTION MODAL -->
+<div class="modal-backdrop" id="edit-txn-modal" onclick="closeEditTxnModalOutside(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-hd" style="padding-bottom:14px">
+      <div class="modal-title">Edit Transaction</div>
+      <button class="modal-close" onclick="closeModal('edit-txn-modal')">&#10005;</button>
+    </div>
+    <div style="padding:0 20px 16px">
+      <!-- Income/Expense toggle -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <button id="edit-type-income" onclick="setEditTxnType('income')" style="padding:12px;border-radius:12px;border:2px solid #e8e8e3;background:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span style="font-size:16px">&#8599;</span> Income
+        </button>
+        <button id="edit-type-expense" onclick="setEditTxnType('expense')" style="padding:12px;border-radius:12px;border:2px solid #e8e8e3;background:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span style="font-size:16px">&#8600;</span> Expense
+        </button>
+      </div>
+      <!-- Description -->
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:#888;font-weight:600;display:block;margin-bottom:5px">Description</label>
+        <div style="display:flex;align-items:center;border:1.5px solid #e8e8e3;border-radius:12px;background:#fafaf8;overflow:hidden;padding:0 12px;gap:8px">
+          <span style="font-size:16px;color:#888">&#128196;</span>
+          <input type="text" id="edit-txn-note" placeholder="Description" style="flex:1;border:none;background:transparent;padding:12px 0;font-size:14px;outline:none;color:#0f172a">
+        </div>
+      </div>
+      <!-- Amount -->
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:#888;font-weight:600;display:block;margin-bottom:5px">Amount</label>
+        <div style="display:flex;align-items:center;border:1.5px solid #e8e8e3;border-radius:12px;background:#fafaf8;overflow:hidden;padding:0 12px;gap:8px">
+          <span style="font-size:16px;color:#888">&#8377;</span>
+          <input type="number" id="edit-txn-amount" placeholder="0" inputmode="numeric" style="flex:1;border:none;background:transparent;padding:12px 0;font-size:15px;font-weight:700;outline:none;color:#0f172a">
+        </div>
+      </div>
+      <!-- Date -->
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;color:#888;font-weight:600;display:block;margin-bottom:5px">Date</label>
+        <div style="display:flex;align-items:center;border:1.5px solid #e8e8e3;border-radius:12px;background:#fafaf8;overflow:hidden;padding:0 12px;gap:8px">
+          <span style="font-size:16px;color:#888">&#128197;</span>
+          <input type="date" id="edit-txn-date" style="flex:1;border:none;background:transparent;padding:12px 0;font-size:14px;outline:none;color:#0f172a">
+        </div>
+      </div>
+      <!-- Buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <button onclick="closeModal('edit-txn-modal')" style="padding:13px;border:1.5px solid #ddd;border-radius:12px;background:#fff;color:#333;font-weight:700;font-size:14px;cursor:pointer">Cancel</button>
+        <button id="edit-txn-update-btn" onclick="updateTxn()" style="padding:13px;border:none;border-radius:12px;background:#1565C0;color:#fff;font-weight:800;font-size:14px;cursor:pointer">Update</button>
+      </div>
+      <!-- Delete -->
+      <button onclick="deleteEditTxn()" style="width:100%;padding:12px;border:none;background:none;color:#c0392b;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <span style="font-size:16px">&#128465;</span> Delete Transaction
+      </button>
     </div>
   </div>
 </div>
@@ -1183,18 +1251,20 @@ function renderCashbook(){
   const days2=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   list.innerHTML=txns.map(t=>{
     const d=new Date(t.date);
-    const ds=days2[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()];
     const sign=t.type==='income'?'+':'-';
-    return `<div class="cb-txn">
-      <div class="cb-txn-dot ${t.type}">${t.type==='income'?'&#8599;':'&#8600;'}</div>
+    const desc = t.note || t.category;
+    const subLabel = t.note ? t.category : (t.type==='income'?'Income':'Expense');
+    return `<div class="cb-txn" onclick="openEditTxnModal('${t.id}')">
+      <div class="cb-txn-date-col">
+        <div class="cb-txn-date-num">${d.getDate()}</div>
+        <div class="cb-txn-date-mon">${months[d.getMonth()]}</div>
+      </div>
       <div class="cb-txn-info">
-        <div class="cb-txn-cat">${t.category}</div>
-        ${t.note?`<div class="cb-txn-note">${t.note}</div>`:''}
-        <div class="cb-txn-date">${ds}</div>
+        <div class="cb-txn-desc">${desc}</div>
+        <div class="cb-txn-type ${t.type}">${subLabel}</div>
       </div>
       <div class="cb-txn-right">
         <div class="cb-txn-amt ${t.type}">${sign}&#8377;${Math.round(t.amount).toLocaleString('en-IN')}</div>
-        <button class="cb-txn-del" onclick="deleteTxn('${t.id}')">&#128465; Delete</button>
       </div>
     </div>`;
   }).join('');
@@ -1203,6 +1273,7 @@ function renderCashbook(){
 function openTxnModal(type){
   txnModalType=type;
   document.getElementById('txn-modal-title').textContent=type==='income'?'+ Income Add Karo':'- Expense Add Karo';
+  document.getElementById('txn-note').placeholder = 'Description likhna (e.g. Activa Petrol, Milk, Site payment...)';
   document.getElementById('txn-save-btn').className=type==='income'?'btn-ok-income':'btn-ok-expense';
   document.getElementById('txn-amount').value='';
   document.getElementById('txn-note').value='';
@@ -1322,6 +1393,64 @@ function exportCashbookPDF(){
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
+let editTxnId = null;
+let editTxnType = 'income';
+
+function openEditTxnModal(id){
+  const t = cashbook.find(x=>x.id===id);
+  if(!t) return;
+  editTxnId = id;
+  editTxnType = t.type;
+  const d = new Date(t.date);
+  document.getElementById('edit-txn-note').value = t.note || t.category || '';
+  document.getElementById('edit-txn-amount').value = t.amount;
+  document.getElementById('edit-txn-date').value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  setEditTxnType(t.type);
+  document.getElementById('edit-txn-modal').classList.add('open');
+}
+
+function setEditTxnType(type){
+  editTxnType = type;
+  const incBtn = document.getElementById('edit-type-income');
+  const expBtn = document.getElementById('edit-type-expense');
+  const updBtn = document.getElementById('edit-txn-update-btn');
+  if(type==='income'){
+    incBtn.style.cssText='padding:12px;border-radius:12px;border:2px solid #0F6E56;background:#E1F5EE;color:#0F6E56;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px';
+    expBtn.style.cssText='padding:12px;border-radius:12px;border:2px solid #e8e8e3;background:#fff;color:#333;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px';
+    updBtn.style.background='#0F6E56';
+  } else {
+    expBtn.style.cssText='padding:12px;border-radius:12px;border:2px solid #c0392b;background:#fdf2ee;color:#c0392b;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px';
+    incBtn.style.cssText='padding:12px;border-radius:12px;border:2px solid #e8e8e3;background:#fff;color:#333;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px';
+    updBtn.style.background='#c0392b';
+  }
+}
+
+function updateTxn(){
+  const amount = parseFloat(document.getElementById('edit-txn-amount').value)||0;
+  const note = document.getElementById('edit-txn-note').value.trim();
+  const dateVal = document.getElementById('edit-txn-date').value;
+  if(amount<=0){ showToast('Amount bharo!',true); return; }
+  const idx = cashbook.findIndex(x=>x.id===editTxnId);
+  if(idx===-1){ closeModal('edit-txn-modal'); return; }
+  const txnDate = dateVal ? new Date(dateVal+'T12:00:00') : new Date(cashbook[idx].date);
+  cashbook[idx] = { ...cashbook[idx], type:editTxnType, amount, note, category: editTxnType==='income'?'Income':'Expense', date:txnDate.toISOString() };
+  scheduleSave();
+  closeModal('edit-txn-modal');
+  renderCashbook();
+  showToast('Transaction updated!');
+}
+
+function deleteEditTxn(){
+  if(!confirm('Delete karna chahte ho?')) return;
+  cashbook = cashbook.filter(t=>t.id!==editTxnId);
+  scheduleSave();
+  closeModal('edit-txn-modal');
+  renderCashbook();
+  showToast('Deleted!');
+}
+
+function closeEditTxnModalOutside(e){ if(e.target===document.getElementById('edit-txn-modal')) closeModal('edit-txn-modal'); }
+
 function showToast(msg,err=false){
   const t=document.getElementById('toast');
   t.innerHTML=msg; t.className='toast show'+(err?' err':'');
