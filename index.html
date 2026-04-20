@@ -3,523 +3,532 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Labour Attendance Register</title>
+<title>Labour Attendance</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg0:#0b1220;
-  --bg1:#0a2a24;
-  --card:#ffffff;
-  --muted:#6b7280;
-  --text:#0f172a;
-  --brand:#0F6E56;
-  --brand2:#1D9E75;
-  --danger:#993C1D;
-  --warn:#854F0B;
-  --info:#185FA5;
-  --line:rgba(15, 23, 42, 0.10);
-  --shadow:0 14px 40px rgba(2, 6, 23, 0.10);
+  --brand:#0F6E56;--brand2:#1D9E75;--danger:#c0392b;--warn:#e67e00;
+  --line:rgba(15,23,42,0.10);--shadow:0 14px 40px rgba(2,6,23,0.08);
 }
-html,body{height:100%}
-body{
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,'Segoe UI', sans-serif;
-  background: radial-gradient(1200px 700px at 20% -10%, rgba(29,158,117,0.22), transparent 60%),
-              radial-gradient(900px 600px at 90% 10%, rgba(56,189,248,0.18), transparent 55%),
-              linear-gradient(180deg, #f8fafc, #f1f5f9);
-  color:var(--text);
-  min-height:100vh
-}
-.app, .auth{padding-bottom:env(safe-area-inset-bottom)}
-.header{padding-top:calc(14px + env(safe-area-inset-top))}
-.tabs{top:calc(61px + env(safe-area-inset-top))}
-.section{padding:16px}
-@media (max-width:420px){
-  .section{padding:14px}
-}
-button,input,select,textarea{touch-action:manipulation}
+html,body{height:100%;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#0f172a}
+button,input,select,textarea{touch-action:manipulation;font-family:inherit}
 button{min-height:44px}
-.tab{min-height:44px}
-.date-nav button{min-height:38px}
-.sync-btn,.logout-btn,.export-btn{min-height:38px}
-input,select,textarea{font-size:16px} /* prevent iOS zoom */
-.worker-card{padding:14px}
-.att-btn{min-height:42px}
-.ot-input,.adv-input{min-height:38px}
-.note-input{min-height:40px}
-.month-sel{gap:10px}
-.month-sel select{min-height:42px}
-.print-btn{min-height:48px}
-.tbl-card{overflow:auto;-webkit-overflow-scrolling:touch}
-.tbl{min-width:360px}
-.toast{bottom:calc(24px + env(safe-area-inset-bottom))}
-.app{
-  max-width:480px;
-  margin:0 auto;
-  padding:0 0 92px;
-  background:rgba(255,255,255,0.70);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  min-height:100vh;
-  box-shadow:var(--shadow);
-  border-left:1px solid rgba(255,255,255,0.55);
-  border-right:1px solid rgba(255,255,255,0.55);
-}
-.header{
-  background:rgba(255,255,255,0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom:1px solid var(--line);
-  padding:14px 16px;
-  position:sticky;top:0;z-index:100
-}
+input,select,textarea{font-size:16px}
+
+/* APP SHELL */
+.app{max-width:480px;margin:0 auto;background:#f1f5f9;min-height:100vh;position:relative;padding-bottom:80px}
+
+/* HEADER */
+.header{background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;position:sticky;top:0;z-index:100;padding-top:calc(14px + env(safe-area-inset-top))}
 .header-top{display:flex;align-items:center;justify-content:space-between}
-.header h1{font-size:18px;font-weight:800;letter-spacing:-0.2px;color:var(--brand)}
-.user-chip{display:flex;align-items:center;gap:8px}
-.user-name{font-size:12px;color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.logout-btn{padding:6px 10px;font-size:12px;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:10px;cursor:pointer}
-.logout-btn:hover{background:#f8fafc}
-.sync-btn{padding:6px 14px;font-size:12px;font-weight:500;border:1.5px solid #1D9E75;color:#0F6E56;background:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.15s}
-.sync-btn:hover{background:#E1F5EE}
+.header h1{font-size:17px;font-weight:800;color:var(--brand)}
+.user-chip{display:flex;align-items:center;gap:6px}
+.user-name{font-size:11px;color:#888;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logout-btn{padding:5px 10px;font-size:12px;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;min-height:32px}
+.sync-btn{padding:5px 12px;font-size:12px;font-weight:600;border:1.5px solid var(--brand2);color:var(--brand);background:none;border-radius:8px;cursor:pointer;min-height:32px}
 .sync-btn.syncing{opacity:0.5;pointer-events:none}
 .sync-status{font-size:11px;color:#888;margin-top:3px}
-.sync-status.ok{color:#0F6E56}
-.sync-status.err{color:#c0392b}
-.tabs{display:flex;border-bottom:1px solid var(--line);background:rgba(255,255,255,0.75);backdrop-filter: blur(10px);-webkit-backdrop-filter: blur(10px);position:sticky;top:61px;z-index:99}
-.tab{flex:1;padding:11px 4px;font-size:13px;font-weight:400;color:#888;border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;transition:all 0.15s}
-.tab.active{color:#0F6E56;border-bottom-color:#0F6E56;font-weight:600}
-.section{padding:16px;display:none}
-.section.active{display:block}
-.date-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.date-nav{display:flex;align-items:center;gap:6px}
-.date-nav button{border:1px solid #ddd;background:#fff;color:#333;cursor:pointer;padding:5px 12px;border-radius:8px;font-size:15px;transition:all 0.15s}
-.date-nav button:hover{background:#f0f0eb}
-.date-label{font-size:14px;font-weight:600;color:#1a1a1a}
-.bulk-row{display:flex;gap:6px;margin-bottom:14px}
-.bulk-btn{flex:1;padding:8px 4px;font-size:11px;font-weight:600;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;background:#fff;transition:all 0.15s}
-.bulk-btn:hover{opacity:0.8}
+.sync-status.ok{color:var(--brand)}.sync-status.err{color:var(--danger)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--line);display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
+.bnav-btn{flex:1;padding:10px 4px 8px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:#aaa;font-size:11px;font-weight:600;min-height:52px}
+.bnav-btn.active{color:var(--brand)}
+.bnav-ico{font-size:20px;line-height:1}
+
+/* PAGES */
+.page{display:none;padding:0}
+.page.active{display:block}
+
+/* ── LABOURS PAGE ─────────────────────────────────────────── */
+.labour-list{padding:12px}
+.labour-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.06);transition:box-shadow 0.15s}
+.labour-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.10)}
+.labour-avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,rgba(29,158,117,0.2),rgba(56,189,248,0.2));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:var(--brand);flex-shrink:0;border:2px solid rgba(15,110,86,0.15)}
+.labour-info{flex:1;min-width:0}
+.labour-name{font-size:15px;font-weight:700;color:#0f172a}
+.labour-sub{font-size:12px;color:#888;margin-top:2px}
+.labour-arrow{font-size:18px;color:#ccc}
+.fab{position:fixed;bottom:68px;right:16px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border:none;border-radius:16px;padding:14px 22px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(15,110,86,0.35);z-index:150;min-height:52px}
+.fab-ico{font-size:20px}
+
+/* ── LABOUR DETAIL PAGE ───────────────────────────────────── */
+.detail-header{background:linear-gradient(135deg,#1565C0,#1976D2);padding:16px;padding-top:calc(16px + env(safe-area-inset-top));color:#fff;position:sticky;top:0;z-index:100}
+.detail-back{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px 4px 0;min-height:36px}
+.detail-hd-row{display:flex;align-items:center;justify-content:space-between}
+.detail-name{font-size:18px;font-weight:800}
+.detail-sub{font-size:13px;opacity:0.85;margin-top:2px}
+.detail-edit-btn{background:rgba(255,255,255,0.2);border:none;color:#fff;padding:6px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
+.detail-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px}
+.dstat{background:#fff;border-radius:12px;padding:12px 6px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.dstat-ico{font-size:18px;margin-bottom:4px}
+.dstat-val{font-size:20px;font-weight:800}
+.dstat-val.p{color:#0F6E56}.dstat-val.a{color:#c0392b}.dstat-val.ot{color:#e67e00}.dstat-val.adv{color:#1565C0}
+.dstat-lbl{font-size:11px;color:#888;margin-top:2px}
+.month-nav-row{display:flex;align-items:center;justify-content:space-between;margin:0 14px 14px;background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.month-nav-row button{border:1px solid #e8e8e3;background:#f7f7f2;color:#333;padding:4px 14px;border-radius:8px;font-size:16px;cursor:pointer;min-height:34px}
+.month-nav-lbl{font-size:15px;font-weight:700}
+.open-report-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;margin:0 14px 14px;width:calc(100% - 28px)}
+.day-table{background:#fff;border-radius:14px;margin:0 14px 80px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.day-table-hd{display:grid;grid-template-columns:80px 1fr 80px;padding:10px 14px;background:#f0f4f8;border-bottom:1px solid #e8e8e3}
+.day-table-hd span{font-size:12px;font-weight:700;color:#1565C0}
+.day-table-hd span:last-child{text-align:right}
+.day-row{display:grid;grid-template-columns:80px 1fr 80px;padding:12px 14px;border-bottom:1px solid #f5f5f0;align-items:center}
+.day-row:last-child{border-bottom:none}
+.day-num{font-size:16px;font-weight:800;color:#0f172a;line-height:1}
+.day-name{font-size:11px;font-weight:600;color:#aaa;margin-top:2px}
+.day-name.weekend{color:#c0392b}
+.att-circles{display:flex;gap:6px;align-items:center}
+.att-circle{width:36px;height:36px;border-radius:50%;border:2px solid;background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;cursor:pointer;transition:all 0.15s}
+.att-circle.P{border-color:#1D9E75;color:#0F6E56}
+.att-circle.P.sel{background:#0F6E56;color:#fff;border-color:#0F6E56}
+.att-circle.A{border-color:#e74c3c;color:#c0392b}
+.att-circle.A.sel{background:#c0392b;color:#fff;border-color:#c0392b}
+.att-circle.OT{border-color:#e67e00;color:#e67e00}
+.att-circle.OT.sel{background:#e67e00;color:#fff;border-color:#e67e00}
+.att-circle.Off{border-color:#8e44ad;color:#8e44ad}
+.att-circle.Off.sel{background:#8e44ad;color:#fff;border-color:#8e44ad}
+.day-adv{font-size:12px;font-weight:600;color:#888;text-align:right}
+.day-adv.has{color:#1565C0}
+
+/* ── ATTENDANCE PAGE ──────────────────────────────────────── */
+.att-date-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#fff;margin-bottom:1px}
+.att-date-bar button{border:1px solid #e8e8e3;background:#f7f7f2;color:#333;padding:5px 14px;border-radius:8px;font-size:16px;cursor:pointer;min-height:36px}
+.att-date-lbl{font-size:14px;font-weight:700}
+.bulk-row{display:flex;gap:8px;padding:10px 14px;background:#fff;margin-bottom:10px}
+.bulk-btn{flex:1;padding:9px 4px;font-size:11px;font-weight:700;border:1.5px solid #ddd;border-radius:10px;cursor:pointer;background:#fff}
 .bulk-btn.ap{border-color:#1D9E75;color:#0F6E56;background:#f0faf6}
-.bulk-btn.ab{border-color:#D85A30;color:#993C1D;background:#fdf2ee}
-.bulk-btn.hd{border-color:#BA7517;color:#854F0B;background:#fdf6e8}
-.worker-card{background:rgba(255,255,255,0.92);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 6px 18px rgba(2,6,23,0.06)}
-.worker-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg, rgba(29,158,117,0.18), rgba(56,189,248,0.16));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--brand);flex-shrink:0;border:1px solid rgba(15,110,86,0.14)}
-.worker-name{font-size:14px;font-weight:600;color:#1a1a1a}
-.worker-role{font-size:12px;color:#888;margin-top:1px}
-.att-btns{display:flex;gap:5px}
-.att-btn{flex:1;padding:9px 2px;font-size:11px;font-weight:800;border:1px solid rgba(2,6,23,0.10);border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.9);color:#64748b;transition:transform 0.12s, box-shadow 0.12s, border-color 0.12s}
-.att-btn:hover{border-color:#aaa}
-.att-btn:active{transform:translateY(1px)}
-.att-btn.P.sel{background:#E1F5EE;border-color:#1D9E75;color:#0F6E56}
-.att-btn.A.sel{background:#FAECE7;border-color:#D85A30;color:#993C1D}
-.att-btn.H.sel{background:#FAEEDA;border-color:#BA7517;color:#854F0B}
-.att-btn.L.sel{background:#E6F1FB;border-color:#378ADD;color:#185FA5}
-.ot-row{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #f0f0eb}
-.ot-label{font-size:11px;color:#888}
-.ot-input{width:64px;padding:6px 8px;font-size:12px;border:1px solid rgba(2,6,23,0.10);border-radius:10px;background:rgba(248,250,252,0.9);color:#0f172a;outline:none}
-.ot-input:focus{border-color:#1D9E75}
-.note-toggle{font-size:11px;color:#888;background:none;border:none;cursor:pointer;padding:3px 0;margin-top:6px;display:block;text-decoration:underline}
-.worker-note{display:none;margin-top:8px}
-.worker-note.show{display:block}
-.note-input{width:100%;padding:8px 10px;font-size:12px;border:1px solid rgba(2,6,23,0.10);border-radius:12px;background:rgba(248,250,252,0.9);color:#0f172a;outline:none;font-family:inherit}
-.note-input:focus{border-color:#1D9E75}
-.adv-row{display:flex;align-items:center;gap:8px;margin-top:8px}
-.adv-input{width:88px;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:8px;background:#fafaf8;color:#1a1a1a;outline:none}
-.adv-input:focus{border-color:#1D9E75}
-.card-title{font-size:13px;font-weight:700;color:#1a1a1a;margin:12px 0 8px}
-.report-head{background:#f7f7f2;border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin-bottom:12px}
-.report-head-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.report-sub{font-size:12px;color:#888;line-height:1.4}
-.report-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.rep-metric{background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:12px 8px;text-align:center}
-.rep-ico{width:28px;height:28px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
-.rep-ico.p{background:#E1F5EE;color:#0F6E56}
-.rep-ico.a{background:#FAECE7;color:#993C1D}
-.rep-ico.o{background:#E6F1FB;color:#185FA5}
-.rep-ico.w{background:#FAEEDA;color:#854F0B}
-.rep-ico.m{background:#f3f3f3;color:#444}
-.rep-val{font-size:18px;font-weight:800}
-.rep-lbl{font-size:11px;color:#888;margin-top:3px}
-.rep-subline{margin-top:8px;text-align:center;font-size:12px;color:#888}
-.rep-subline b{color:#444}
-.pay-card{background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin:12px 0}
-.pay-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0f0eb;font-size:13px}
+.bulk-btn.ab{border-color:#e74c3c;color:#c0392b;background:#fdf2ee}
+.bulk-btn.hd{border-color:#e67e00;color:#e67e00;background:#fef9f0}
+.att-worker-list{padding:0 14px}
+.att-worker-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.06);transition:all 0.15s}
+.att-worker-card:active{transform:scale(0.98)}
+.att-badge{padding:6px 12px;border-radius:10px;font-size:13px;font-weight:800;min-width:44px;text-align:center;flex-shrink:0}
+.att-badge.P{background:#E1F5EE;color:#0F6E56}
+.att-badge.A{background:#FAECE7;color:#c0392b}
+.att-badge.H{background:#FEF9F0;color:#e67e00}
+.att-badge.PH{background:#E1F5EE;color:#0F6E56}
+.att-badge.PP{background:#c5eede;color:#085041}
+.att-badge.L{background:#E6F1FB;color:#1565C0}
+.att-badge.Off{background:#f3e8ff;color:#8e44ad}
+.att-badge.none{background:#f7f7f2;color:#aaa}
+
+/* ── SUMMARY PAGE ─────────────────────────────────────────── */
+.sum-controls{padding:12px 14px;background:#fff;margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap}
+.sum-controls select{padding:8px 10px;border:1px solid #ddd;border-radius:10px;background:#f8fafc;font-size:13px;outline:none;flex:1}
+.export-csv-btn{padding:8px 14px;border:1.5px solid var(--brand2);background:#f0faf6;color:var(--brand);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer}
+.sum-report{padding:0 14px 80px}
+.sum-header-card{background:linear-gradient(135deg,var(--brand),var(--brand2));border-radius:14px;padding:16px;margin-bottom:12px;color:#fff}
+.sum-hc-top{display:flex;justify-content:space-between;margin-bottom:8px}
+.sum-hc-label{font-size:12px;font-weight:700;opacity:0.85}
+.sum-hc-name{font-size:17px;font-weight:800}
+.sum-hc-sub{font-size:12px;opacity:0.8;margin-top:2px}
+.pay-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.pay-card-title{font-size:11px;font-weight:700;color:#aaa;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:10px}
+.pay-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f0;font-size:14px}
 .pay-row:last-child{border-bottom:none}
 .pay-lbl{color:#666}
 .pay-val{font-weight:700}
-.pay-val.neg{color:#993C1D}
-.pay-total{font-size:14px}
-.pay-net{font-size:16px;color:#0F6E56}
-.tbl-card{background:#fff;border:1px solid #e8e8e3;border-radius:12px;overflow:hidden}
-.tbl{width:100%;border-collapse:collapse;font-size:12px}
-.tbl th{background:#f7f7f2;color:#888;text-align:left;font-weight:700;padding:10px 12px;border-bottom:1px solid #e8e8e3}
-.tbl td{padding:10px 12px;border-bottom:1px solid #f0f0eb;vertical-align:top}
-.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
-.pill.p{background:#E1F5EE;color:#0F6E56}
-.pill.a{background:#FAECE7;color:#993C1D}
-.pill.h{background:#FAEEDA;color:#854F0B}
-.pill.l{background:#E6F1FB;color:#185FA5}
-.print-btn{width:100%;padding:12px;background:#0F6E56;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;transition:background 0.15s}
-.print-btn:hover{background:#1D9E75}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:flex-end;justify-content:center;z-index:10000;padding:14px}
-.modal.hide{display:none}
-.modal-sheet{width:100%;max-width:480px;background:#fff;border-radius:16px 16px 14px 14px;box-shadow:0 20px 50px rgba(0,0,0,0.25);overflow:hidden}
-.modal-hd{padding:14px 16px;border-bottom:1px solid #eee;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.modal-title{font-size:16px;font-weight:800;color:#1a1a1a;line-height:1.2}
-.modal-sub{font-size:12px;color:#888;margin-top:3px}
-.modal-body{padding:14px 16px}
-.time-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.mini-lbl{font-size:12px;color:#888;margin:0 0 6px;font-weight:600}
-.time-inp{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fafaf8;font-size:14px;outline:none}
-.time-inp:focus{border-color:#1D9E75}
-.type-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 14px}
-.type-btn{padding:10px 0;border:1.5px solid #cfe7de;border-radius:12px;background:#fff;color:#0F6E56;font-weight:800;font-size:14px;cursor:pointer}
-.type-btn.sel{background:#0F6E56;border-color:#0F6E56;color:#fff}
-.note-area{width:100%;min-height:90px;resize:none;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafaf8;outline:none;font-family:inherit;font-size:13px}
-.note-area:focus{border-color:#1D9E75}
-.modal-ft{padding:14px 16px;border-top:1px solid #eee;display:flex;gap:12px}
-.btn-ghost{flex:1;padding:12px;border:1.5px solid #ddd;border-radius:12px;background:#fff;color:#333;font-weight:800;font-size:14px;cursor:pointer}
-.btn-ok{flex:1;padding:12px;border:none;border-radius:12px;background:#43a047;color:#fff;font-weight:900;font-size:14px;cursor:pointer}
-@media print{
-  body{background:#fff}
-  .app{max-width:none;box-shadow:none}
-  .header,.tabs,#tab-attendance,#tab-workers,.toast,.month-sel{display:none!important}
-  #tab-summary{display:block!important;padding:0}
-  #tab-summary .print-btn, #tab-summary .export-btn, #tab-summary select{display:none!important}
-  .section{display:block!important}
-}
-.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:18px}
-.metric{background:#f7f7f2;border-radius:10px;padding:12px 8px;text-align:center}
-.metric-val{font-size:24px;font-weight:700}
-.metric-val.p{color:#0F6E56}.metric-val.a{color:#993C1D}.metric-val.h{color:#854F0B}.metric-val.t{color:#185FA5}
-.metric-lbl{font-size:11px;color:#888;margin-top:2px}
-.worker-stat{background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin-bottom:10px}
-.ws-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.ws-name{font-size:14px;font-weight:600;color:#1a1a1a}
-.ws-wage{font-size:12px;color:#888}
-.ws-counts{display:flex;gap:10px;font-size:11px;margin-bottom:6px;flex-wrap:wrap}
-.ws-bars{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-bottom:10px;background:#f0f0eb}
-.ws-bar.p{background:#1D9E75}.ws-bar.a{background:#D85A30}.ws-bar.h{background:#EF9F27}.ws-bar.l{background:#378ADD}
-.ws-salary{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid #f0f0eb}
-.ws-salary-lbl{font-size:12px;color:#888}
-.ws-salary-val{font-size:16px;font-weight:700;color:#0F6E56}
-.month-sel{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
-.month-sel select{padding:8px 10px;border:1px solid rgba(2,6,23,0.10);border-radius:12px;background:rgba(248,250,252,0.9);color:#0f172a;font-size:13px;font-family:inherit;outline:none}
-.export-btn{padding:8px 14px;border:1px solid rgba(15,110,86,0.22);background:rgba(225,245,238,0.55);color:var(--brand);border-radius:12px;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.15s}
-.export-btn:hover{background:#E1F5EE}
-.add-form{background:rgba(255,255,255,0.92);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 10px 24px rgba(2,6,23,0.06)}
-.add-form h3{font-size:15px;font-weight:600;margin-bottom:14px;color:#1a1a1a}
-.form-row{margin-bottom:10px}
-.form-row label{font-size:12px;color:#888;display:block;margin-bottom:4px;font-weight:500}
-.form-row input{width:100%;padding:10px 12px;border:1px solid rgba(2,6,23,0.10);border-radius:12px;font-size:14px;background:rgba(248,250,252,0.9);color:#0f172a;font-family:inherit;outline:none;transition:border 0.15s, box-shadow 0.15s}
-.form-row input:focus{border-color:#1D9E75}
-.btn-primary{width:100%;padding:12px;background:linear-gradient(135deg, var(--brand), var(--brand2));color:#fff;border:none;border-radius:14px;font-size:14px;font-weight:900;cursor:pointer;margin-top:6px;transition:transform 0.12s, box-shadow 0.12s;box-shadow:0 12px 26px rgba(15,110,86,0.22)}
-.btn-primary:hover{transform:translateY(-1px)}
-.worker-list-item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border:1px solid #e8e8e3;border-radius:12px;margin-bottom:8px}
-.wli-info{flex:1;min-width:0}
-.wli-name{font-size:14px;font-weight:600;color:#1a1a1a}
-.wli-sub{font-size:12px;color:#888;margin-top:1px}
-.wli-actions{display:flex;gap:8px;align-items:center}
-.wli-report{padding:5px 12px;font-size:12px;border:1px solid #cfe7de;border-radius:8px;background:#f0faf6;color:#0F6E56;cursor:pointer;font-weight:600;transition:all 0.15s;white-space:nowrap}
-.wli-report:hover{opacity:0.85}
-.wli-del{padding:5px 12px;font-size:12px;border:1px solid #f0957b;border-radius:8px;background:none;color:#993C1D;cursor:pointer;font-weight:500;transition:all 0.15s}
-.wli-del:hover{background:#fdf2ee}
-.search-row{margin-bottom:12px}
-.search-row input{width:100%;padding:9px 14px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafaf8;color:#1a1a1a;font-family:inherit;outline:none}
-.search-row input:focus{border-color:#1D9E75}
-.section-title{font-size:11px;font-weight:600;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin:0 0 10px}
-.empty{text-align:center;padding:40px 20px;color:#aaa;font-size:14px;line-height:1.6}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg, var(--brand), var(--brand2));color:#fff;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:900;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 12px 26px rgba(2,6,23,0.20)}
-.toast.show{opacity:1}
-.toast.err{background:#993C1D}
-.auth{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;padding:22px;background:radial-gradient(900px 700px at 20% 0%, rgba(29,158,117,0.28), transparent 60%),radial-gradient(900px 700px at 90% 10%, rgba(56,189,248,0.18), transparent 55%),linear-gradient(180deg, #070b16, #0b1220)}
-.auth.hide{display:none}
-.auth-card{width:100%;max-width:420px;max-height:calc(100dvh - 40px);overflow:auto;-webkit-overflow-scrolling:touch;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,0.45);backdrop-filter: blur(16px);-webkit-backdrop-filter: blur(16px);padding:18px}
-.auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.auth-logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg, rgba(29,158,117,0.85), rgba(56,189,248,0.85));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:1000;letter-spacing:-0.6px}
-.auth-title{color:#fff;font-size:18px;font-weight:950;letter-spacing:-0.3px}
-.auth-sub{color:rgba(255,255,255,0.68);font-size:12px;margin-top:2px}
-.auth-tabs{display:flex;gap:10px;margin:14px 0 12px}
-.auth-tab{flex:1;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.78);font-weight:900;cursor:pointer}
-.auth-tab.active{background:rgba(255,255,255,0.16);color:#fff;border-color:rgba(255,255,255,0.22)}
-.auth-form{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:18px;padding:14px}
-.auth-row{margin-bottom:10px}
-.auth-row label{display:block;font-size:12px;color:rgba(255,255,255,0.70);margin-bottom:6px;font-weight:800}
-.auth-inp{width:100%;padding:12px 12px;border-radius:14px;border:1px solid rgba(255,255,255,0.18);background:rgba(2,6,23,0.35);color:#fff;outline:none;font-size:14px}
-.auth-inp:focus{border-color:rgba(56,189,248,0.55)}
-.auth-cta{width:100%;padding:12px;border:none;border-radius:14px;background:linear-gradient(135deg, rgba(29,158,117,0.95), rgba(56,189,248,0.80));color:#fff;font-weight:1000;font-size:14px;cursor:pointer;margin-top:4px}
-.auth-cta:hover{opacity:0.95}
-.auth-foot{margin-top:10px;color:rgba(255,255,255,0.65);font-size:12px;line-height:1.5}
-.loading-overlay{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;gap:14px}
-.loading-overlay.hide{display:none}
-.spinner{width:32px;height:32px;border:3px solid #e8e8e3;border-top-color:#0F6E56;border-radius:50%;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-overlay p{font-size:14px;color:#888}
-.loading-overlay h2{font-size:18px;font-weight:600;color:#0F6E56}
-/* CASHBOOK */
-.cb-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:10px 14px}
-.cb-month-nav button{border:1px solid #ddd;background:#f7f7f2;color:#333;cursor:pointer;padding:4px 12px;border-radius:8px;font-size:16px;min-height:36px}
-.cb-overview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
-.cb-ov-card{background:#fff;border:1px solid #e8e8e3;border-radius:14px;padding:14px 8px;text-align:center;box-shadow:0 2px 8px rgba(2,6,23,0.05)}
-.cb-ov-ico{font-size:18px;margin-bottom:4px}
-.cb-ov-card.income .cb-ov-ico{color:#0F6E56}
-.cb-ov-card.expense .cb-ov-ico{color:#993C1D}
-.cb-ov-card.balance .cb-ov-ico{color:#185FA5}
-.cb-ov-val{font-size:16px;font-weight:800;margin-bottom:2px}
-.cb-ov-card.income .cb-ov-val{color:#0F6E56}
-.cb-ov-card.expense .cb-ov-val{color:#993C1D}
-.cb-ov-card.balance .cb-ov-val{color:#185FA5}
-.cb-ov-lbl{font-size:11px;color:#888}
-.cb-add-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.cb-add-btn{padding:13px;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:transform 0.12s}
-.cb-add-btn:active{transform:scale(0.97)}
+.pay-val.neg{color:#c0392b}
+.pay-val.pos{color:#0F6E56}
+.pay-total{font-size:15px;font-weight:800;padding-top:10px;margin-top:4px}
+.pay-net{font-size:16px;font-weight:800;color:#0F6E56}
+.sum-att-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.sum-att-box{background:#fff;border-radius:12px;padding:12px 6px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.sum-att-val{font-size:20px;font-weight:800}
+.sum-att-lbl{font-size:11px;color:#888;margin-top:2px}
+.sum-tbl-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);margin-bottom:10px}
+.sum-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.sum-tbl th{background:#f0f4f8;color:#1565C0;text-align:left;font-weight:700;padding:10px 12px;border-bottom:1px solid #e8e8e3}
+.sum-tbl td{padding:10px 12px;border-bottom:1px solid #f5f5f0;vertical-align:middle}
+.sum-tbl tr:last-child td{border-bottom:none}
+.pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.pill.P,.pill.PH,.pill.PP{background:#E1F5EE;color:#0F6E56}
+.pill.A{background:#FAECE7;color:#c0392b}
+.pill.H{background:#FEF9F0;color:#e67e00}
+.pill.L{background:#E6F1FB;color:#1565C0}
+.pill.Off{background:#f3e8ff;color:#8e44ad}
+.print-btn{width:100%;padding:13px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:4px}
+
+/* ── CASHBOOK PAGE ────────────────────────────────────────── */
+.cb-body{padding:12px 14px 80px}
+.cb-month-nav{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.cb-month-nav button{border:1px solid #e8e8e3;background:#f7f7f2;padding:4px 14px;border-radius:8px;font-size:16px;cursor:pointer;min-height:34px}
+.cb-month-lbl{font-size:15px;font-weight:700}
+.cb-ov-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.cb-ov{background:#fff;border-radius:12px;padding:14px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.cb-ov-ico{font-size:20px;margin-bottom:4px}
+.cb-ov-val{font-size:16px;font-weight:800}
+.cb-ov.income .cb-ov-ico,.cb-ov.income .cb-ov-val{color:#0F6E56}
+.cb-ov.expense .cb-ov-ico,.cb-ov.expense .cb-ov-val{color:#c0392b}
+.cb-ov.balance .cb-ov-ico,.cb-ov.balance .cb-ov-val{color:#1565C0}
+.cb-ov-lbl{font-size:11px;color:#888;margin-top:2px}
+.cb-add-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.cb-add-btn{padding:13px;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer}
 .income-btn{background:linear-gradient(135deg,#0F6E56,#1D9E75);color:#fff}
 .expense-btn{background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff}
-.cb-txn-item{background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
-.cb-txn-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.cb-pdf-btn{width:100%;padding:11px;background:none;border:1.5px solid var(--brand2);color:var(--brand);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:12px}
+.cb-section-lbl{font-size:11px;font-weight:700;color:#aaa;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:8px}
+.cb-txn{background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.cb-txn-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .cb-txn-dot.income{background:#E1F5EE;color:#0F6E56}
-.cb-txn-dot.expense{background:#FAECE7;color:#993C1D}
+.cb-txn-dot.expense{background:#FAECE7;color:#c0392b}
 .cb-txn-info{flex:1;min-width:0}
-.cb-txn-cat{font-size:13px;font-weight:700;color:#1a1a1a}
-.cb-txn-note{font-size:11px;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cb-txn-cat{font-size:13px;font-weight:700}
+.cb-txn-note{font-size:11px;color:#888;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cb-txn-date{font-size:11px;color:#aaa;margin-top:1px}
 .cb-txn-right{text-align:right;flex-shrink:0}
 .cb-txn-amt{font-size:15px;font-weight:800}
 .cb-txn-amt.income{color:#0F6E56}
-.cb-txn-amt.expense{color:#993C1D}
-.cb-txn-del{font-size:11px;color:#ccc;background:none;border:none;cursor:pointer;margin-top:3px;display:block;min-height:auto}
-.cb-pdf-btn{width:100%;padding:12px;background:none;border:1.5px solid #1D9E75;color:#0F6E56;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;transition:all 0.15s}
-.cb-pdf-btn:hover{background:#E1F5EE}
+.cb-txn-amt.expense{color:#c0392b}
+.cb-txn-del{font-size:11px;color:#ccc;background:none;border:none;cursor:pointer;display:block;margin-top:3px;min-height:auto;padding:0}
+
+/* ── ADD/EDIT LABOUR PAGE ─────────────────────────────────── */
+.form-page{padding:16px}
+.form-page-hd{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.form-back-btn{background:none;border:1px solid #e8e8e3;padding:6px 12px;border-radius:10px;font-size:16px;cursor:pointer;color:#333;min-height:38px}
+.form-page-title{font-size:17px;font-weight:800}
+.form-section-lbl{font-size:12px;font-weight:700;color:var(--brand);letter-spacing:0.4px;margin:0 0 10px}
+.form-card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.form-row{margin-bottom:12px}
+.form-row label{font-size:12px;color:#888;display:block;margin-bottom:5px;font-weight:600}
+.form-row input{width:100%;padding:11px 14px;border:1.5px solid #e8e8e3;border-radius:12px;font-size:15px;color:#0f172a;outline:none;background:#fafaf8;transition:border 0.15s}
+.form-row input:focus{border-color:var(--brand2)}
+.form-submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 8px 24px rgba(15,110,86,0.25)}
+
+/* ── MODALS ───────────────────────────────────────────────── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:0 0 28px;animation:slideUp 0.22s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:#e0e0e0;border-radius:2px;margin:12px auto 0}
+.modal-hd{padding:16px 20px 0;display:flex;align-items:flex-start;justify-content:space-between}
+.modal-title{font-size:16px;font-weight:800}
+.modal-date-lbl{font-size:13px;color:#888;margin-top:2px}
+.modal-close{width:30px;height:30px;border-radius:50%;background:#f0f0eb;border:none;cursor:pointer;font-size:16px;color:#888}
+.modal-divider{height:1px;background:#f5f5f0;margin:14px 0}
+.modal-sec-lbl{font-size:11px;font-weight:700;color:#aaa;letter-spacing:0.6px;text-transform:uppercase;padding:0 20px;margin-bottom:10px}
+.att-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 20px;margin-bottom:4px}
+.att-type-btn{padding:14px 4px;border-radius:12px;border:2px solid #e8e8e3;background:#fff;cursor:pointer;text-align:center;transition:all 0.15s;min-height:60px}
+.att-type-btn .at-icon{font-size:18px;font-weight:800;margin-bottom:4px;color:#888}
+.att-type-btn .at-lbl{font-size:11px;font-weight:700;color:#888}
+.att-type-btn.sel{border-color:var(--brand);background:#f0faf6}
+.att-type-btn.sel .at-icon,.att-type-btn.sel .at-lbl{color:var(--brand)}
+.att-type-btn[data-v="A"].sel{border-color:#c0392b;background:#fdf2ee}
+.att-type-btn[data-v="A"].sel .at-icon,.att-type-btn[data-v="A"].sel .at-lbl{color:#c0392b}
+.att-type-btn[data-v="L"].sel{border-color:#1565C0;background:#eaf3fd}
+.att-type-btn[data-v="L"].sel .at-icon,.att-type-btn[data-v="L"].sel .at-lbl{color:#1565C0}
+.att-type-btn[data-v="Off"].sel{border-color:#8e44ad;background:#f3e8ff}
+.att-type-btn[data-v="Off"].sel .at-icon,.att-type-btn[data-v="Off"].sel .at-lbl{color:#8e44ad}
+.modal-ot-row{display:flex;align-items:center;gap:10px;padding:0 20px;margin-bottom:12px}
+.modal-ot-lbl{font-size:13px;color:#555;flex:1}
+.modal-ot-inp{width:72px;padding:7px 10px;font-size:14px;font-weight:700;border:1.5px solid #e8e8e3;border-radius:10px;background:#fafaf8;color:#0f172a;outline:none;text-align:center}
+.modal-ot-inp:focus{border-color:var(--brand2)}
+.modal-note-wrap{padding:0 20px;margin-bottom:14px}
+.modal-note-inp{width:100%;padding:10px 12px;font-size:13px;border:1.5px solid #e8e8e3;border-radius:12px;background:#fafaf8;color:#0f172a;outline:none;font-family:inherit;resize:none}
+.modal-note-inp:focus{border-color:var(--brand2)}
+.modal-adv-row{display:flex;align-items:center;gap:10px;padding:0 20px;margin-bottom:14px}
+.modal-adv-lbl{font-size:13px;color:#555;flex:1}
+.modal-adv-inp{width:100px;padding:7px 10px;font-size:14px;font-weight:700;border:1.5px solid #e8e8e3;border-radius:10px;background:#fafaf8;color:#0f172a;outline:none;text-align:center}
+.modal-adv-inp:focus{border-color:#1565C0}
+.modal-save-btn{margin:0 20px;width:calc(100% - 40px);padding:13px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,#43a047,#2e7d32)}
+
+/* Cashbook modal */
+.cb-modal-body{padding:0 20px}
+.cb-modal-body .form-row input,.cb-modal-body .form-row select,.cb-modal-body .form-row textarea{width:100%;padding:10px 12px;border:1.5px solid #e8e8e3;border-radius:12px;font-size:14px;background:#fafaf8;color:#0f172a;outline:none;font-family:inherit}
+.cb-modal-body .form-row input:focus,.cb-modal-body .form-row select:focus,.cb-modal-body .form-row textarea:focus{border-color:var(--brand2)}
+.cb-modal-body .form-row label{font-size:12px;color:#888;font-weight:600;display:block;margin-bottom:5px}
+.cb-modal-body .form-row{margin-bottom:12px}
+.cb-modal-ft{display:flex;gap:12px;padding:14px 20px 0}
+.btn-ghost{flex:1;padding:12px;border:1.5px solid #ddd;border-radius:12px;background:#fff;color:#333;font-weight:700;font-size:14px;cursor:pointer}
+.btn-ok-income{flex:1;padding:12px;border:none;border-radius:12px;background:#0F6E56;color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.btn-ok-expense{flex:1;padding:12px;border:none;border-radius:12px;background:#c0392b;color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+
+/* OT input modal for day table */
+.ot-modal-body{padding:0 20px}
+.ot-modal-body input{width:100%;padding:12px 14px;border:1.5px solid #e8e8e3;border-radius:12px;font-size:18px;font-weight:700;text-align:center;background:#fafaf8;color:#0f172a;outline:none}
+.ot-modal-body input:focus{border-color:#e67e00}
+
+/* AUTH */
+.auth{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(180deg,#070b16,#0b1220)}
+.auth.hide{display:none}
+.auth-card{width:100%;max-width:400px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:22px;padding:20px;backdrop-filter:blur(16px)}
+.auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.auth-logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,rgba(29,158,117,0.9),rgba(56,189,248,0.8));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:16px}
+.auth-title{color:#fff;font-size:18px;font-weight:800}
+.auth-sub{color:rgba(255,255,255,0.6);font-size:12px;margin-top:1px}
+.auth-tabs{display:flex;gap:8px;margin:14px 0 12px}
+.auth-tab{flex:1;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);font-weight:700;cursor:pointer}
+.auth-tab.active{background:rgba(255,255,255,0.16);color:#fff}
+.auth-form{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:14px}
+.auth-row{margin-bottom:10px}
+.auth-row label{display:block;font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:5px;font-weight:700}
+.auth-inp{width:100%;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(2,6,23,0.35);color:#fff;outline:none;font-size:15px;font-family:inherit}
+.auth-inp:focus{border-color:rgba(56,189,248,0.5)}
+.auth-cta{width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,rgba(29,158,117,0.95),rgba(56,189,248,0.8));color:#fff;font-weight:900;font-size:15px;cursor:pointer;margin-top:6px}
+.auth-foot{margin-top:10px;color:rgba(255,255,255,0.55);font-size:12px;line-height:1.5}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;gap:14px}
+.loading-overlay.hide{display:none}
+.spinner{width:32px;height:32px;border:3px solid #e8e8e3;border-top-color:var(--brand);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay p{font-size:14px;color:#888}
+.loading-overlay h2{font-size:18px;font-weight:700;color:var(--brand)}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:800;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 8px 20px rgba(0,0,0,0.2)}
+.toast.show{opacity:1}
+.toast.err{background:var(--danger)}
+
+.empty{text-align:center;padding:48px 20px;color:#aaa;font-size:14px;line-height:1.7}
+.hide{display:none!important}
+
+@media print{
+  .bottom-nav,.fab,.header,.auth{display:none!important}
+  body{background:#fff}
+  .app{max-width:none;box-shadow:none}
+}
 </style>
 </head>
 <body>
 
+<!-- AUTH -->
 <div class="auth hide" id="auth">
   <div class="auth-card">
     <div class="auth-brand">
       <div class="auth-logo">LA</div>
       <div>
         <div class="auth-title">Labour Attendance</div>
-        <div class="auth-sub">Premium register with offline mode</div>
+        <div class="auth-sub">Cloud sync • Free forever</div>
       </div>
     </div>
-
     <div class="auth-tabs">
       <button class="auth-tab active" id="auth-tab-login" onclick="switchAuth('login')">Login</button>
       <button class="auth-tab" id="auth-tab-signup" onclick="switchAuth('signup')">Sign up</button>
     </div>
-
     <div class="auth-form" id="auth-login">
-      <div class="auth-row">
-        <label>Phone</label>
-        <input class="auth-inp" id="login-phone" inputmode="numeric" placeholder="e.g. 9876543210">
-      </div>
-      <div class="auth-row">
-        <label>PIN</label>
-        <input class="auth-inp" id="login-pin" type="password" inputmode="numeric" placeholder="4-digit PIN">
-      </div>
+      <div class="auth-row"><label>Phone</label><input class="auth-inp" id="login-phone" inputmode="numeric" placeholder="e.g. 9876543210"></div>
+      <div class="auth-row"><label>PIN</label><input class="auth-inp" id="login-pin" type="password" inputmode="numeric" placeholder="4-digit PIN"></div>
       <button class="auth-cta" onclick="login()">Login</button>
-      <div class="auth-foot">Tip: PIN aapka local device me save hota hai. Internet nahi ho tab bhi login ho jayega.</div>
+      <div class="auth-foot">Same phone+PIN se dono devices pe login karo.</div>
     </div>
-
     <div class="auth-form" id="auth-signup" style="display:none">
-      <div class="auth-row">
-        <label>Name</label>
-        <input class="auth-inp" id="signup-name" placeholder="Your name">
-      </div>
-      <div class="auth-row">
-        <label>Phone</label>
-        <input class="auth-inp" id="signup-phone" inputmode="numeric" placeholder="e.g. 9876543210">
-      </div>
-      <div class="auth-row">
-        <label>Create PIN</label>
-        <input class="auth-inp" id="signup-pin" type="password" inputmode="numeric" placeholder="4-digit PIN">
-      </div>
-      <button class="auth-cta" onclick="signup()">Create account</button>
-      <div class="auth-foot">Sign up once. After that, login quickly with phone + PIN.</div>
+      <div class="auth-row"><label>Name</label><input class="auth-inp" id="signup-name" placeholder="Tumhara naam"></div>
+      <div class="auth-row"><label>Phone</label><input class="auth-inp" id="signup-phone" inputmode="numeric" placeholder="e.g. 9876543210"></div>
+      <div class="auth-row"><label>Create PIN</label><input class="auth-inp" id="signup-pin" type="password" inputmode="numeric" placeholder="4-digit PIN"></div>
+      <button class="auth-cta" onclick="signup()">Account Banao</button>
     </div>
   </div>
 </div>
 
+<!-- LOADING -->
 <div class="loading-overlay" id="loading-overlay">
   <h2>Labour Attendance</h2>
   <div class="spinner"></div>
-  <p>Google Sheets se data load ho raha hai...</p>
+  <p>Data load ho raha hai...</p>
 </div>
 
-<div class="app">
+<!-- MAIN APP -->
+<div class="app" id="app">
+
+  <!-- HEADER -->
   <div class="header">
     <div class="header-top">
       <h1>&#128197; Labour Attendance</h1>
       <div class="user-chip">
-        <div class="user-name" id="user-name"></div>
+        <span class="user-name" id="user-name"></span>
         <button class="logout-btn" onclick="logout()">Logout</button>
-        <button class="sync-btn" id="sync-btn" onclick="syncNow()">&#8635; Sync</button>
+        <button class="sync-btn" id="sync-btn" onclick="syncNow()">&#8635;</button>
       </div>
     </div>
     <div class="sync-status" id="sync-status">Connecting...</div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('attendance',this)">Attendance</button>
-    <button class="tab" onclick="switchTab('summary',this)">Summary</button>
-    <button class="tab" onclick="switchTab('cashbook',this)">Cashbook</button>
-    <button class="tab" onclick="switchTab('workers',this)">Workers</button>
+  <!-- PAGE: LABOURS -->
+  <div class="page active" id="page-labours">
+    <div class="labour-list" id="labour-list"></div>
+    <button class="fab" onclick="showAddLabour()">
+      <span class="fab-ico">&#43;&#128100;</span> Add Labour
+    </button>
   </div>
 
-  <!-- ATTENDANCE TAB -->
-  <div id="tab-attendance" class="section active">
-    <div class="date-bar">
-      <div class="date-nav">
-        <button onclick="changeDate(-1)">&#8592;</button>
-        <span class="date-label" id="att-date-lbl"></span>
-        <button onclick="changeDate(1)">&#8594;</button>
+  <!-- PAGE: LABOUR DETAIL -->
+  <div class="page" id="page-detail">
+    <div class="detail-header" id="detail-header">
+      <div class="detail-hd-row">
+        <button class="detail-back" onclick="showPage('labours')">&#8592;</button>
+        <div style="flex:1">
+          <div class="detail-name" id="detail-name">Worker</div>
+          <div class="detail-sub" id="detail-sub"></div>
+        </div>
+        <button class="detail-edit-btn" onclick="editCurrentLabour()">&#9998; Edit</button>
       </div>
+    </div>
+    <div class="detail-stats-grid" id="detail-stats"></div>
+    <div class="month-nav-row">
+      <button onclick="detailChangeMonth(-1)">&#8592;</button>
+      <span class="month-nav-lbl" id="detail-month-lbl"></span>
+      <button onclick="detailChangeMonth(1)">&#8594;</button>
+    </div>
+    <button class="open-report-btn" onclick="openDetailReport()">&#128196; Open Report</button>
+    <div class="day-table">
+      <div class="day-table-hd">
+        <span>Date</span><span>Attendance</span><span style="text-align:right">Advance</span>
+      </div>
+      <div id="detail-day-table"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: ATTENDANCE -->
+  <div class="page" id="page-attendance">
+    <div class="att-date-bar">
+      <button onclick="changeDate(-1)">&#8592;</button>
+      <span class="att-date-lbl" id="att-date-lbl"></span>
+      <button onclick="changeDate(1)">&#8594;</button>
     </div>
     <div class="bulk-row">
       <button class="bulk-btn ap" onclick="markAll('P')">&#10003; All Present</button>
       <button class="bulk-btn ab" onclick="markAll('A')">&#10007; All Absent</button>
-      <button class="bulk-btn hd" onclick="markAll('H')">&#189; All Half Day</button>
+      <button class="bulk-btn hd" onclick="markAll('H')">&#189; Half Day</button>
     </div>
-    <div id="att-list"></div>
+    <div class="att-worker-list" id="att-worker-list"></div>
   </div>
 
-  <!-- SUMMARY TAB -->
-  <div id="tab-summary" class="section">
-    <div class="month-sel">
+  <!-- PAGE: SUMMARY -->
+  <div class="page" id="page-summary">
+    <div class="sum-controls">
       <select id="sum-worker" onchange="renderSummary()"></select>
       <select id="sum-month" onchange="renderSummary()"></select>
       <select id="sum-year" onchange="renderSummary()"></select>
-      <button class="export-btn" onclick="exportCSV()">&#8595; Export CSV</button>
+      <button class="export-csv-btn" onclick="exportCSV()">&#8595; CSV</button>
     </div>
-    <div id="summary-report"></div>
-    <button class="print-btn" onclick="generateSharePDF()">Generate & Share PDF</button>
+    <div class="sum-report" id="sum-report"></div>
   </div>
 
-  <!-- CASHBOOK TAB -->
-  <div id="tab-cashbook" class="section">
-    <!-- Monthly overview -->
-    <div class="cb-month-nav">
-      <button onclick="cbChangeMonth(-1)">&#8592;</button>
-      <span id="cb-month-lbl" style="font-size:15px;font-weight:700;color:#1a1a1a"></span>
-      <button onclick="cbChangeMonth(1)">&#8594;</button>
-    </div>
-    <div class="cb-overview-grid">
-      <div class="cb-ov-card income">
-        <div class="cb-ov-ico">&#8599;</div>
-        <div class="cb-ov-val" id="cb-total-income">&#8377;0</div>
-        <div class="cb-ov-lbl">Income</div>
+  <!-- PAGE: CASHBOOK -->
+  <div class="page" id="page-cashbook">
+    <div class="cb-body">
+      <div class="cb-month-nav">
+        <button onclick="cbChangeMonth(-1)">&#8592;</button>
+        <span class="cb-month-lbl" id="cb-month-lbl"></span>
+        <button onclick="cbChangeMonth(1)">&#8594;</button>
       </div>
-      <div class="cb-ov-card expense">
-        <div class="cb-ov-ico">&#8600;</div>
-        <div class="cb-ov-val" id="cb-total-expense">&#8377;0</div>
-        <div class="cb-ov-lbl">Expense</div>
+      <div class="cb-ov-grid">
+        <div class="cb-ov income"><div class="cb-ov-ico">&#8599;</div><div class="cb-ov-val" id="cb-income">&#8377;0</div><div class="cb-ov-lbl">Income</div></div>
+        <div class="cb-ov expense"><div class="cb-ov-ico">&#8600;</div><div class="cb-ov-val" id="cb-expense">&#8377;0</div><div class="cb-ov-lbl">Expense</div></div>
+        <div class="cb-ov balance"><div class="cb-ov-ico">&#9646;</div><div class="cb-ov-val" id="cb-balance">&#8377;0</div><div class="cb-ov-lbl">Balance</div></div>
       </div>
-      <div class="cb-ov-card balance">
-        <div class="cb-ov-ico">&#9646;</div>
-        <div class="cb-ov-val" id="cb-balance">&#8377;0</div>
-        <div class="cb-ov-lbl">Balance</div>
+      <div class="cb-add-row">
+        <button class="cb-add-btn income-btn" onclick="openTxnModal('income')">+ Income</button>
+        <button class="cb-add-btn expense-btn" onclick="openTxnModal('expense')">- Expense</button>
       </div>
+      <button class="cb-pdf-btn" onclick="exportCashbookPDF()">&#128221; Download PDF Report</button>
+      <div class="cb-section-lbl">Transactions</div>
+      <div id="cb-txn-list"></div>
     </div>
-    <!-- Add transaction buttons -->
-    <div class="cb-add-row">
-      <button class="cb-add-btn income-btn" onclick="openTxnModal('income')">+ Income</button>
-      <button class="cb-add-btn expense-btn" onclick="openTxnModal('expense')">- Expense</button>
-    </div>
-    <button class="cb-pdf-btn" onclick="exportCashbookPDF()">&#128221; Download PDF Report</button>
-    <!-- Transactions list -->
-    <div class="section-title" style="margin-top:4px">Transactions</div>
-    <div id="cb-txn-list"></div>
   </div>
 
-  <!-- WORKERS TAB -->
-  <div id="tab-workers" class="section">
-    <div class="search-row">
-      <input type="text" placeholder="&#128269; Worker ka naam search karo..." id="worker-search" oninput="renderWorkerList()">
+  <!-- PAGE: ADD/EDIT LABOUR -->
+  <div class="page" id="page-add-labour">
+    <div class="form-page">
+      <div class="form-page-hd">
+        <button class="form-back-btn" onclick="showPage('labours')">&#8592;</button>
+        <span class="form-page-title" id="labour-form-title">Add Labour</span>
+      </div>
+      <div class="form-card">
+        <div class="form-section-lbl">Basic Information</div>
+        <input type="hidden" id="edit-labour-id">
+        <div class="form-row"><label>Labour Name</label><input type="text" id="labour-name" placeholder="e.g. Ramesh Kumar"></div>
+        <div class="form-row"><label>Role / Kaam</label><input type="text" id="labour-role" placeholder="e.g. Mason, Helper"></div>
+      </div>
+      <div class="form-card">
+        <div class="form-section-lbl">Salary Information</div>
+        <div class="form-row"><label>Daily Wage (&#8377;)</label><input type="number" id="labour-wage" placeholder="e.g. 675"></div>
+        <div class="form-row"><label>Overtime Rate per hour (&#8377;)</label><input type="number" id="labour-ot" placeholder="e.g. 80 (0 if none)"></div>
+      </div>
+      <button class="form-submit-btn" id="labour-submit-btn" onclick="saveLabour()">Add Labour</button>
     </div>
-    <div class="add-form">
-      <h3>+ New Worker Add Karo</h3>
-      <div class="form-row"><label>Naam</label><input type="text" id="w-name" placeholder="e.g. Ramesh Kumar"></div>
-      <div class="form-row"><label>Kaam / Role</label><input type="text" id="w-role" placeholder="e.g. Mason, Helper, Electrician"></div>
-      <div class="form-row"><label>Daily Wage (&#8377;)</label><input type="number" id="w-wage" placeholder="e.g. 500"></div>
-      <div class="form-row"><label>Overtime Rate per hour (&#8377;) — 0 rakh sakte ho</label><input type="number" id="w-ot" placeholder="e.g. 80"></div>
-      <button class="btn-primary" onclick="addWorker()">Worker Add Karo</button>
+  </div>
+
+</div><!-- end .app -->
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav" id="bottom-nav">
+  <button class="bnav-btn active" id="bnav-labours" onclick="showPage('labours')"><span class="bnav-ico">&#128100;</span>Labours</button>
+  <button class="bnav-btn" id="bnav-attendance" onclick="showPage('attendance')"><span class="bnav-ico">&#128197;</span>Attendance</button>
+  <button class="bnav-btn" id="bnav-summary" onclick="showPage('summary')"><span class="bnav-ico">&#128202;</span>Summary</button>
+  <button class="bnav-btn" id="bnav-cashbook" onclick="showPage('cashbook')"><span class="bnav-ico">&#128180;</span>Cashbook</button>
+</div>
+
+<!-- ATTENDANCE MODAL -->
+<div class="modal-backdrop" id="att-modal" onclick="closeAttModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-hd">
+      <div>
+        <div class="modal-title" id="att-modal-title">Mark Attendance</div>
+        <div class="modal-date-lbl" id="att-modal-date"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('att-modal')">&#10005;</button>
     </div>
-    <div class="section-title">Sab Workers</div>
-    <div id="worker-list"></div>
+    <div class="modal-divider"></div>
+    <div class="modal-sec-lbl">Attendance Type</div>
+    <div class="att-type-grid">
+      <div class="att-type-btn" data-v="H" onclick="selAttType('H')"><div class="at-icon">&#189;</div><div class="at-lbl">Half Day</div></div>
+      <div class="att-type-btn" data-v="P" onclick="selAttType('P')"><div class="at-icon">P</div><div class="at-lbl">Present</div></div>
+      <div class="att-type-btn" data-v="PH" onclick="selAttType('PH')"><div class="at-icon" style="font-size:13px">P+&#189;</div><div class="at-lbl">P+Half</div></div>
+      <div class="att-type-btn" data-v="PP" onclick="selAttType('PP')"><div class="at-icon" style="font-size:13px">P+P</div><div class="at-lbl">Double</div></div>
+      <div class="att-type-btn" data-v="A" onclick="selAttType('A')"><div class="at-icon">&#10007;</div><div class="at-lbl">Absent</div></div>
+      <div class="att-type-btn" data-v="L" onclick="selAttType('L')"><div class="at-icon">&#128197;</div><div class="at-lbl">Leave</div></div>
+      <div class="att-type-btn" data-v="Off" onclick="selAttType('Off')"><div class="at-icon">&#128683;</div><div class="at-lbl">Week Off</div></div>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-sec-lbl">Overtime Hours</div>
+    <div class="modal-ot-row">
+      <span class="modal-ot-lbl" id="modal-ot-lbl">Overtime hours (&#8377;0/hr)</span>
+      <input type="number" class="modal-ot-inp" id="modal-ot" min="0" max="16" step="0.5" value="0">
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-sec-lbl">Advance</div>
+    <div class="modal-adv-row">
+      <span class="modal-adv-lbl">Advance amount (&#8377;)</span>
+      <input type="number" class="modal-adv-inp" id="modal-adv" min="0" step="1" value="0">
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-sec-lbl">Note</div>
+    <div class="modal-note-wrap">
+      <textarea class="modal-note-inp" id="modal-note" rows="2" placeholder="Optional note..."></textarea>
+    </div>
+    <button class="modal-save-btn" onclick="saveAttModal()">Save Karo</button>
   </div>
 </div>
 
 <!-- CASHBOOK MODAL -->
-<div class="modal hide" id="txn-modal" onclick="closeTxnModal(event)">
+<div class="modal-backdrop" id="txn-modal" onclick="closeTxnModalOutside(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
     <div class="modal-hd">
-      <div>
-        <div class="modal-title" id="txn-modal-title">Add Income</div>
-        <div class="modal-sub" id="txn-modal-date"></div>
-      </div>
+      <div><div class="modal-title" id="txn-modal-title">Add Income</div></div>
+      <button class="modal-close" onclick="closeModal('txn-modal')">&#10005;</button>
     </div>
-    <div class="modal-body">
-      <div class="form-row"><label>Date</label><input type="date" id="txn-date" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:12px;background:#fafaf8;font-size:14px;font-family:inherit;outline:none;color:#0f172a"></div>
+    <div class="modal-divider"></div>
+    <div class="cb-modal-body">
+      <div class="form-row"><label>Date</label><input type="date" id="txn-date"></div>
       <div class="form-row"><label>Amount (&#8377;)</label><input type="number" id="txn-amount" placeholder="e.g. 5000" inputmode="numeric"></div>
       <div class="form-row"><label>Category</label>
-        <select id="txn-category" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:12px;background:#fafaf8;font-size:14px;font-family:inherit;outline:none">
-          <option value="General">General</option>
-          <option value="Material">Material</option>
-          <option value="Labour">Labour</option>
-          <option value="Transport">Transport</option>
-          <option value="Food">Food</option>
-          <option value="Tools">Tools</option>
-          <option value="Other">Other</option>
-        </select>
+        <select id="txn-category"></select>
       </div>
-      <div class="form-row"><label>Note (optional)</label><textarea class="note-area" id="txn-note" placeholder="e.g. Cement kharida, client se payment mila..." rows="2"></textarea></div>
+      <div class="form-row"><label>Note (optional)</label><textarea id="txn-note" rows="2" placeholder="e.g. Cement kharida..."></textarea></div>
     </div>
-    <div class="modal-ft">
-      <button class="btn-ghost" onclick="document.getElementById('txn-modal').classList.add('hide')">Cancel</button>
-      <button class="btn-ok" id="txn-save-btn" onclick="saveTxn()">Save</button>
+    <div class="cb-modal-ft">
+      <button class="btn-ghost" onclick="closeModal('txn-modal')">Cancel</button>
+      <button class="btn-ok-income" id="txn-save-btn" onclick="saveTxn()">Save</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
-
-<div class="modal hide" id="att-modal" onclick="closeAttModal(event)">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
-    <div class="modal-hd">
-      <div>
-        <div class="modal-title" id="am-title">Mark Present</div>
-        <div class="modal-sub" id="am-date"></div>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="time-row">
-        <div>
-          <div class="mini-lbl">Check-in</div>
-          <input class="time-inp" id="am-in" type="time" />
-        </div>
-        <div>
-          <div class="mini-lbl">Check-out</div>
-          <input class="time-inp" id="am-out" type="time" />
-        </div>
-      </div>
-
-      <div class="mini-lbl">Attendance Type</div>
-      <div class="type-row">
-        <button class="type-btn" id="am-t-h" onclick="setAttType('H')">&#189;</button>
-        <button class="type-btn" id="am-t-p" onclick="setAttType('P')">P</button>
-        <button class="type-btn" id="am-t-ph" onclick="setAttType('PH')">P+&#189;</button>
-        <button class="type-btn" id="am-t-pp" onclick="setAttType('PP')">P+P</button>
-      </div>
-
-      <div class="mini-lbl">Notes</div>
-      <textarea class="note-area" id="am-note" placeholder="Enter notes (optional)"></textarea>
-    </div>
-    <div class="modal-ft">
-      <button class="btn-ghost" onclick="hideAttModal()">Cancel</button>
-      <button class="btn-ok" onclick="saveAttModal()">Mark Present</button>
-    </div>
-  </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -527,791 +536,586 @@ const SUPA_URL = 'https://ibxairxqihdeqxthwpng.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlieGFpcnhxaWhkZXF4dGh3cG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDY3NzIsImV4cCI6MjA5MjE4Mjc3Mn0.yGv9Pi9elzLBS9p31cUiE5z53lpNTVbQdVRhM4RlzdM';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-let workers = [];
-let attendance = {};
-let notes = {};
-let overtime = {};
-let advances = {};
-let timeLogs = {};
+// STATE
+let workers = [], attendance = {}, notes = {}, overtime = {}, advances = {}, timeLogs = {}, cashbook = [];
 let currentDate = new Date();
-let syncTimer = null;
+let syncTimer = null, autoSyncTimer = null;
 let attModalState = { wid: null, dk: null, type: 'P' };
-let authState = { mode: 'login' };
-let autoSyncTimer = null;
+let txnModalType = 'income';
+let detailWid = null;
+let detailMonth = new Date();
+let cbDate = new Date();
+let currentPage = 'labours';
 
-// ── AUTH ──────────────────────────────────────────────────────────────────────
+// ── AUTH ──────────────────────────────────────────────────────
+function getSession(){ try{ return JSON.parse(localStorage.getItem('la_session')||'null'); }catch(e){ return null; } }
+function setSession(s){ try{ localStorage.setItem('la_session', JSON.stringify(s)); }catch(e){} }
+function isAuthed(){ const s=getSession(); return !!(s&&s.uid); }
 
-function getSession() {
-  try { return JSON.parse(localStorage.getItem('la_session') || 'null'); } catch(e) { return null; }
-}
-function setSession(s) {
-  try { localStorage.setItem('la_session', JSON.stringify(s)); } catch(e) {}
-}
-function isAuthed() {
-  const s = getSession();
-  return !!(s && s.uid);
-}
-
-function showAuth() {
+function showAuth(){
   document.getElementById('auth').classList.remove('hide');
   document.getElementById('loading-overlay').classList.add('hide');
   switchAuth('login');
 }
-function hideAuth() {
-  document.getElementById('auth').classList.add('hide');
+function hideAuth(){ document.getElementById('auth').classList.add('hide'); }
+function switchAuth(mode){
+  document.getElementById('auth-tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('auth-tab-signup').classList.toggle('active', mode==='signup');
+  document.getElementById('auth-login').style.display = mode==='login'?'':'none';
+  document.getElementById('auth-signup').style.display = mode==='signup'?'':'none';
 }
-function switchAuth(mode) {
-  authState.mode = mode;
-  document.getElementById('auth-tab-login').classList.toggle('active', mode === 'login');
-  document.getElementById('auth-tab-signup').classList.toggle('active', mode === 'signup');
-  document.getElementById('auth-login').style.display = mode === 'login' ? '' : 'none';
-  document.getElementById('auth-signup').style.display = mode === 'signup' ? '' : 'none';
-}
-function normPhone(p) {
-  return (p || '').toString().replace(/\D/g, '').slice(-10);
-}
+function normPhone(p){ return (p||'').toString().replace(/\D/g,'').slice(-10); }
 
-async function login() {
+async function login(){
   const phone = normPhone(document.getElementById('login-phone').value);
-  const pin = (document.getElementById('login-pin').value || '').trim();
-  if (phone.length < 10) { showToast('Valid phone number dalo', true); return; }
-  if (pin.length < 4) { showToast('PIN dalo', true); return; }
-  try {
-    const { data, error } = await supa.from('users').select('*').eq('phone', phone).eq('pin', pin).single();
-    if (error || !data) throw new Error('Invalid phone or PIN');
-    setSession({ uid: data.id, name: data.name, phone: data.phone });
+  const pin = (document.getElementById('login-pin').value||'').trim();
+  if(phone.length<10){ showToast('Valid phone dalo',true); return; }
+  if(pin.length<4){ showToast('PIN dalo',true); return; }
+  try{
+    const {data,error} = await supa.from('users').select('*').eq('phone',phone).eq('pin',pin).single();
+    if(error||!data) throw new Error('Invalid phone or PIN');
+    setSession({uid:data.id, name:data.name, phone:data.phone});
     afterAuthInit();
-  } catch(e) {
-    showToast('Login failed: ' + e.message, true);
-  }
+  } catch(e){ showToast('Login failed: '+e.message,true); }
 }
 
-async function signup() {
-  const name = (document.getElementById('signup-name').value || '').trim();
+async function signup(){
+  const name = (document.getElementById('signup-name').value||'').trim();
   const phone = normPhone(document.getElementById('signup-phone').value);
-  const pin = (document.getElementById('signup-pin').value || '').trim();
-  if (!name) { showToast('Name dalo', true); return; }
-  if (phone.length < 10) { showToast('Valid phone number dalo', true); return; }
-  if (!/^\d{4,6}$/.test(pin)) { showToast('PIN 4-6 digits rakho', true); return; }
-  try {
-    // Check if phone exists
-    const { data: existing } = await supa.from('users').select('id').eq('phone', phone).maybeSingle();
-    if (existing) { showToast('Ye phone pehle se registered hai', true); return; }
-    const uid = 'u' + Date.now();
-    const { error } = await supa.from('users').insert({ id: uid, name, phone, pin });
-    if (error) throw error;
-    setSession({ uid, name, phone });
+  const pin = (document.getElementById('signup-pin').value||'').trim();
+  if(!name){ showToast('Name dalo',true); return; }
+  if(phone.length<10){ showToast('Valid phone dalo',true); return; }
+  if(!/^\d{4,6}$/.test(pin)){ showToast('PIN 4-6 digits rakho',true); return; }
+  try{
+    const {data:ex} = await supa.from('users').select('id').eq('phone',phone).maybeSingle();
+    if(ex){ showToast('Phone already registered',true); return; }
+    const uid = 'u'+Date.now();
+    const {error} = await supa.from('users').insert({id:uid,name,phone,pin});
+    if(error) throw error;
+    setSession({uid,name,phone});
     afterAuthInit();
-  } catch(e) {
-    showToast('Signup failed: ' + e.message, true);
-  }
+  } catch(e){ showToast('Signup failed: '+e.message,true); }
 }
 
-function logout() {
-  setSession(null);
-  stopAutoSync();
-  workers = []; attendance = {}; notes = {}; overtime = {}; advances = {}; timeLogs = {};
-  document.getElementById('user-name').textContent = '';
+function logout(){
+  setSession(null); stopAutoSync();
+  workers=[]; attendance={}; notes={}; overtime={}; advances={}; timeLogs={}; cashbook=[];
+  document.getElementById('user-name').textContent='';
   showAuth();
 }
 
-async function afterAuthInit() {
+async function afterAuthInit(){
   hideAuth();
   const s = getSession();
-  document.getElementById('user-name').textContent = s ? (s.name + ' • ' + s.phone) : '';
+  document.getElementById('user-name').textContent = s ? s.name : '';
   document.getElementById('loading-overlay').classList.remove('hide');
   await loadFromSupabase();
   document.getElementById('loading-overlay').classList.add('hide');
-  renderAttendance();
-  renderSummary();
-  renderWorkerList();
-  cbDate = new Date();
-  renderCashbook();
+  initUI();
+  showPage('labours');
   startAutoSync();
-  showToast('Welcome ' + (s ? s.name : '') + '!');
+  showToast('Welcome '+( s?s.name:'')+' !');
 }
 
-// ── STORAGE ───────────────────────────────────────────────────────────────────
-
-function saveLocal() {
-  try {
-    const uid = (getSession() || {}).uid || 'anon';
-    localStorage.setItem('lw_'+uid, JSON.stringify(workers));
-    localStorage.setItem('la_'+uid, JSON.stringify(attendance));
-    localStorage.setItem('ln_'+uid, JSON.stringify(notes));
-    localStorage.setItem('lo_'+uid, JSON.stringify(overtime));
-    localStorage.setItem('ladv_'+uid, JSON.stringify(advances));
-    localStorage.setItem('lt_'+uid, JSON.stringify(timeLogs));
-  } catch(e) {}
+// ── STORAGE ───────────────────────────────────────────────────
+function saveLocal(){
+  try{
+    const uid=(getSession()||{}).uid||'anon';
+    localStorage.setItem('lw_'+uid,JSON.stringify(workers));
+    localStorage.setItem('la_'+uid,JSON.stringify(attendance));
+    localStorage.setItem('ln_'+uid,JSON.stringify(notes));
+    localStorage.setItem('lo_'+uid,JSON.stringify(overtime));
+    localStorage.setItem('ladv_'+uid,JSON.stringify(advances));
+    localStorage.setItem('lt_'+uid,JSON.stringify(timeLogs));
+    localStorage.setItem('lcb_'+uid,JSON.stringify(cashbook));
+  }catch(e){}
 }
-
-function loadLocal() {
-  try {
-    const uid = (getSession() || {}).uid || 'anon';
-    workers    = JSON.parse(localStorage.getItem('lw_'+uid)   || '[]');
-    attendance = JSON.parse(localStorage.getItem('la_'+uid)   || '{}');
-    notes      = JSON.parse(localStorage.getItem('ln_'+uid)   || '{}');
-    overtime   = JSON.parse(localStorage.getItem('lo_'+uid)   || '{}');
-    advances   = JSON.parse(localStorage.getItem('ladv_'+uid) || '{}');
-    timeLogs   = JSON.parse(localStorage.getItem('lt_'+uid)   || '{}');
-  } catch(e) {
-    workers=[]; attendance={}; notes={}; overtime={}; advances={}; timeLogs={};
-  }
-  loadCashbookLocal();
+function loadLocal(){
+  try{
+    const uid=(getSession()||{}).uid||'anon';
+    workers=JSON.parse(localStorage.getItem('lw_'+uid)||'[]');
+    attendance=JSON.parse(localStorage.getItem('la_'+uid)||'{}');
+    notes=JSON.parse(localStorage.getItem('ln_'+uid)||'{}');
+    overtime=JSON.parse(localStorage.getItem('lo_'+uid)||'{}');
+    advances=JSON.parse(localStorage.getItem('ladv_'+uid)||'{}');
+    timeLogs=JSON.parse(localStorage.getItem('lt_'+uid)||'{}');
+    cashbook=JSON.parse(localStorage.getItem('lcb_'+uid)||'[]');
+  }catch(e){ workers=[]; attendance={}; notes={}; overtime={}; advances={}; timeLogs={}; cashbook=[]; }
 }
-
-async function loadFromSupabase() {
-  try {
-    const uid = (getSession() || {}).uid;
-    if (!uid) throw new Error('Not logged in');
-    const { data, error } = await supa.from('labour_data').select('*').eq('uid', uid).maybeSingle();
-    if (error) throw error;
-    if (data) {
-      workers    = data.workers    || [];
-      attendance = data.attendance || {};
-      notes      = data.notes      || {};
-      overtime   = data.overtime   || {};
-      advances   = data.advances   || {};
-      timeLogs   = data.time_logs  || {};
-      cashbook   = data.cashbook   || [];
+async function loadFromSupabase(){
+  try{
+    const uid=(getSession()||{}).uid;
+    if(!uid) throw new Error('Not logged in');
+    const {data,error} = await supa.from('labour_data').select('*').eq('uid',uid).maybeSingle();
+    if(error) throw error;
+    if(data){
+      workers=data.workers||[]; attendance=data.attendance||{}; notes=data.notes||{};
+      overtime=data.overtime||{}; advances=data.advances||{}; timeLogs=data.time_logs||{};
+      cashbook=data.cashbook||[];
     }
     saveLocal();
-    setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
+    setStatus('Synced: '+new Date().toLocaleTimeString(),'ok');
     return true;
-  } catch(e) {
+  }catch(e){
     loadLocal();
-    setStatus('Offline mode — local data', 'err');
+    setStatus('Offline — local data','err');
     return false;
   }
 }
-
-async function saveToSupabase() {
+async function saveToSupabase(){
   saveLocal();
-  setStatus('Saving...', '');
+  setStatus('Saving...','');
   document.getElementById('sync-btn').classList.add('syncing');
-  try {
-    const uid = (getSession() || {}).uid;
-    if (!uid) throw new Error('Not logged in');
-    const payload = {
-      uid,
-      workers,
-      attendance,
-      notes,
-      overtime,
-      advances,
-      time_logs: timeLogs,
-      cashbook,
-      updated_at: new Date().toISOString()
-    };
-    const { error } = await supa.from('labour_data').upsert(payload, { onConflict: 'uid' });
-    if (error) throw error;
-    setStatus('Synced: ' + new Date().toLocaleTimeString(), 'ok');
-  } catch(e) {
-    setStatus('Save failed: ' + e.message, 'err');
-  }
+  try{
+    const uid=(getSession()||{}).uid;
+    if(!uid) throw new Error('Not logged in');
+    const {error} = await supa.from('labour_data').upsert({
+      uid,workers,attendance,notes,overtime,advances,time_logs:timeLogs,cashbook,
+      updated_at:new Date().toISOString()
+    },{onConflict:'uid'});
+    if(error) throw error;
+    setStatus('Synced: '+new Date().toLocaleTimeString(),'ok');
+  }catch(e){ setStatus('Save failed: '+e.message,'err'); }
   document.getElementById('sync-btn').classList.remove('syncing');
 }
-
-function scheduleSave() {
-  clearTimeout(syncTimer);
-  syncTimer = setTimeout(saveToSupabase, 1500);
-}
-
-async function syncNow() {
+function scheduleSave(){ clearTimeout(syncTimer); syncTimer=setTimeout(saveToSupabase,1500); }
+async function syncNow(){
   document.getElementById('sync-btn').classList.add('syncing');
-  setStatus('Syncing...', '');
+  setStatus('Syncing...','');
+  if(syncTimer){ clearTimeout(syncTimer); syncTimer=null; await saveToSupabase(); }
   await loadFromSupabase();
   document.getElementById('sync-btn').classList.remove('syncing');
-  renderAttendance();
-  renderSummary();
-  renderWorkerList();
+  refreshCurrentPage();
   showToast('Sync complete!');
 }
-
-function startAutoSync() {
+function startAutoSync(){
   stopAutoSync();
-  autoSyncTimer = setInterval(async () => {
-    if (!navigator.onLine || syncTimer) return;
+  autoSyncTimer = setInterval(async()=>{
+    if(!navigator.onLine||syncTimer) return;
     await loadFromSupabase();
-    renderAttendance();
-    renderSummary();
-    renderWorkerList();
-  }, 30000);
+    refreshCurrentPage();
+  },30000);
 }
-
-function stopAutoSync() {
-  if (autoSyncTimer) clearInterval(autoSyncTimer);
-  autoSyncTimer = null;
-}
-
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && isAuthed() && navigator.onLine) {
-    if (syncTimer) {
-      clearTimeout(syncTimer);
-      syncTimer = null;
-      await saveToSupabase();
-    }
+function stopAutoSync(){ if(autoSyncTimer) clearInterval(autoSyncTimer); autoSyncTimer=null; }
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState==='visible'&&isAuthed()&&navigator.onLine){
+    if(syncTimer){ clearTimeout(syncTimer); syncTimer=null; await saveToSupabase(); }
     await loadFromSupabase();
-    renderAttendance();
-    renderSummary();
-    renderWorkerList();
+    refreshCurrentPage();
   }
 });
+window.addEventListener('online',async()=>{ if(isAuthed()){ await saveToSupabase(); await loadFromSupabase(); refreshCurrentPage(); } });
 
-window.addEventListener('online', async () => {
-  if (isAuthed()) {
-    await saveToSupabase();
-    await loadFromSupabase();
-    renderAttendance();
-    renderSummary();
-    renderWorkerList();
-  }
-});
-
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-
-function dateKey(d) {
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+// ── HELPERS ───────────────────────────────────────────────────
+function dateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtDate(d){
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
 }
-function fmtDate(d) {
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+function fmtMonth(d){
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return months[d.getMonth()]+' '+d.getFullYear();
 }
-function getInitials(name) {
-  return name.trim().split(' ').map(n => n[0] ? n[0].toUpperCase() : '').slice(0,2).join('');
+function getInitials(name){ return name.trim().split(' ').map(n=>n[0]?n[0].toUpperCase():'').slice(0,2).join(''); }
+function setStatus(msg,type){
+  const el=document.getElementById('sync-status');
+  el.textContent=msg;
+  el.className='sync-status'+(type==='ok'?' ok':type==='err'?' err':'');
 }
-function setStatus(msg, type) {
-  const el = document.getElementById('sync-status');
-  el.textContent = msg;
-  el.className = 'sync-status' + (type==='ok'?' ok':type==='err'?' err':'');
-}
+function dayUnits(s){ return ({P:1,H:0.5,PH:1.5,PP:2})[s]||0; }
 
-// ── UI ────────────────────────────────────────────────────────────────────────
-
-function initUI() {
-  document.getElementById('att-date-lbl').textContent = fmtDate(currentDate);
-  const ws = document.getElementById('sum-worker');
-  const ms = document.getElementById('sum-month');
-  const ys = document.getElementById('sum-year');
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  months.forEach((m, i) => {
-    const o = document.createElement('option');
-    o.value = i; o.textContent = m;
-    if (i === new Date().getMonth()) o.selected = true;
-    ms.appendChild(o);
-  });
-  const yr = new Date().getFullYear();
-  for (let y = yr; y >= yr-3; y--) {
-    const o = document.createElement('option');
-    o.value = y; o.textContent = y;
-    if (y === yr) o.selected = true;
-    ys.appendChild(o);
-  }
-  ws.innerHTML = '';
-  const all = document.createElement('option');
-  all.value = 'ALL'; all.textContent = 'All workers';
-  ws.appendChild(all);
+// ── NAVIGATION ────────────────────────────────────────────────
+const navPages = ['labours','attendance','summary','cashbook'];
+function showPage(page){
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const nb = document.getElementById('bnav-'+page);
+  if(nb) nb.classList.add('active');
+  currentPage = page;
+  document.getElementById('bottom-nav').style.display = navPages.includes(page)?'flex':'none';
+  // Render
+  if(page==='labours') renderLabourList();
+  if(page==='attendance') renderAttendance();
+  if(page==='summary') renderSummary();
+  if(page==='cashbook') renderCashbook();
+  if(page==='detail') renderDetail();
 }
+function refreshCurrentPage(){ showPage(currentPage); }
 
-function changeDate(d) {
-  currentDate.setDate(currentDate.getDate() + d);
-  document.getElementById('att-date-lbl').textContent = fmtDate(currentDate);
-  renderAttendance();
-}
-
-function switchTab(t, el) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(s => s.classList.remove('active'));
-  document.getElementById('tab-' + t).classList.add('active');
-  el.classList.add('active');
-  if (t === 'summary') renderSummary();
-  if (t === 'workers') renderWorkerList();
-  if (t === 'attendance') renderAttendance();
-  if (t === 'cashbook') renderCashbook();
-}
-
-function markAll(status) {
-  const dk = dateKey(currentDate);
-  if (!attendance[dk]) attendance[dk] = {};
-  workers.forEach(w => { attendance[dk][w.id] = status; });
-  scheduleSave();
-  renderAttendance();
-  const labels = { P:'Present', A:'Absent', H:'Half Day' };
-  showToast('Sab ' + (labels[status]||status) + ' mark ho gaye!');
-}
-
-function markAtt(wid, status) {
-  if (status === 'P' || status === 'H') {
-    openAttModal(wid, status);
+// ── LABOURS LIST ──────────────────────────────────────────────
+function renderLabourList(){
+  const list = document.getElementById('labour-list');
+  if(workers.length===0){
+    list.innerHTML='<div class="empty">Koi labour nahi hai.<br>+ Add Labour button se add karo.</div>';
     return;
   }
-  const dk = dateKey(currentDate);
-  if (!attendance[dk]) attendance[dk] = {};
-  attendance[dk][wid] = status;
-  scheduleSave();
-  document.querySelectorAll('[data-wid="' + wid + '"] .att-btn').forEach(b => {
-    b.classList.remove('sel');
-    if (b.dataset.s === status) b.classList.add('sel');
-  });
-}
-
-function updateOT(wid, val) {
-  const dk = dateKey(currentDate);
-  if (!overtime[dk]) overtime[dk] = {};
-  overtime[dk][wid] = parseFloat(val) || 0;
-  scheduleSave();
-}
-
-function updateAdvance(wid, val) {
-  const dk = dateKey(currentDate);
-  if (!advances[dk]) advances[dk] = {};
-  advances[dk][wid] = Math.max(0, parseFloat(val) || 0);
-  scheduleSave();
-}
-
-function updateNote(wid, val) {
-  const dk = dateKey(currentDate);
-  if (!notes[dk]) notes[dk] = {};
-  notes[dk][wid] = val;
-  scheduleSave();
-}
-
-function toggleNote(wid) {
-  document.getElementById('note-' + wid).classList.toggle('show');
-}
-
-function renderAttendance() {
-  const dk = dateKey(currentDate);
-  const dayAtt  = attendance[dk] || {};
-  const dayOt   = overtime[dk]   || {};
-  const dayAdv  = advances[dk]   || {};
-  const dayNote = notes[dk]      || {};
-  const list = document.getElementById('att-list');
-  if (workers.length === 0) {
-    list.innerHTML = '<div class="empty">Abhi koi worker nahi hai.<br><br>Workers tab mein jao aur pehle worker add karo.</div>';
-    return;
-  }
-  list.innerHTML = workers.map(w => {
-    const s    = dayAtt[w.id]  || '';
-    const ot   = dayOt[w.id]   || 0;
-    const adv  = dayAdv[w.id]  || 0;
-    const note = dayNote[w.id] || '';
-    const presentSel = (s==='P'||s==='PH'||s==='PP') ? ' sel' : '';
-    const halfSel    = s==='H' ? ' sel' : '';
-    return `<div class="worker-card" data-wid="${w.id}">
-      <div class="worker-top">
-        <div class="avatar">${getInitials(w.name)}</div>
-        <div>
-          <div class="worker-name">${w.name}</div>
-          <div class="worker-role">${w.role} &bull; &#8377;${w.wage}/day</div>
-        </div>
+  list.innerHTML = workers.map(w=>{
+    return `<div class="labour-card" onclick="openLabourDetail('${w.id}')">
+      <div class="labour-avatar">${getInitials(w.name)}</div>
+      <div class="labour-info">
+        <div class="labour-name">${w.name}</div>
+        <div class="labour-sub">${w.role} &bull; &#8377;${w.wage}/day</div>
       </div>
-      <div class="att-btns">
-        <button class="att-btn P${presentSel}" data-s="P" onclick="markAtt('${w.id}','P')">Present</button>
-        <button class="att-btn A${s==='A'?' sel':''}" data-s="A" onclick="markAtt('${w.id}','A')">Absent</button>
-        <button class="att-btn H${halfSel}" data-s="H" onclick="markAtt('${w.id}','H')">Half Day</button>
-        <button class="att-btn L${s==='L'?' sel':''}" data-s="L" onclick="markAtt('${w.id}','L')">Leave</button>
-      </div>
-      <div class="ot-row">
-        <span class="ot-label">Overtime hours:</span>
-        <input type="number" class="ot-input" value="${ot}" min="0" max="16" step="0.5" onchange="updateOT('${w.id}',this.value)" placeholder="0">
-        <span class="ot-label" style="margin-left:4px">&#8377;${w.otRate||0}/hr</span>
-      </div>
-      <div class="adv-row">
-        <span class="ot-label">Advance (&#8377;):</span>
-        <input type="number" class="adv-input" value="${adv}" min="0" step="1" onchange="updateAdvance('${w.id}',this.value)" placeholder="0">
-      </div>
-      <button class="note-toggle" onclick="toggleNote('${w.id}')">+ Note likhna ho toh yahan</button>
-      <div class="worker-note${note?' show':''}" id="note-${w.id}">
-        <input class="note-input" type="text" placeholder="e.g. koi kaam ki baat..." value="${note.replace(/"/g,'&quot;')}" oninput="updateNote('${w.id}',this.value)">
-      </div>
+      <span class="labour-arrow">&#8250;</span>
     </div>`;
   }).join('');
 }
 
-function renderSummary() {
-  const ws = document.getElementById('sum-worker');
-  const m  = parseInt(document.getElementById('sum-month').value);
-  const y  = parseInt(document.getElementById('sum-year').value);
-  const selectedWid = ws ? ws.value : 'ALL';
-  const daysInMonth = new Date(y, m+1, 0).getDate();
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function showAddLabour(){
+  document.getElementById('edit-labour-id').value='';
+  document.getElementById('labour-name').value='';
+  document.getElementById('labour-role').value='';
+  document.getElementById('labour-wage').value='';
+  document.getElementById('labour-ot').value='';
+  document.getElementById('labour-form-title').textContent='Add Labour';
+  document.getElementById('labour-submit-btn').textContent='Add Labour';
+  showPage('add-labour');
+}
 
-  // Populate worker dropdown
-  ws.innerHTML = '<option value="ALL">All workers</option>';
-  workers.forEach(w => {
-    const o = document.createElement('option');
-    o.value = w.id; o.textContent = w.name;
-    if (w.id === selectedWid) o.selected = true;
-    ws.appendChild(o);
-  });
+function editCurrentLabour(){
+  const w = workers.find(x=>x.id===detailWid);
+  if(!w) return;
+  document.getElementById('edit-labour-id').value=w.id;
+  document.getElementById('labour-name').value=w.name;
+  document.getElementById('labour-role').value=w.role;
+  document.getElementById('labour-wage').value=w.wage;
+  document.getElementById('labour-ot').value=w.otRate||0;
+  document.getElementById('labour-form-title').textContent='Edit Labour';
+  document.getElementById('labour-submit-btn').textContent='Update Labour';
+  showPage('add-labour');
+}
 
-  const dayUnits = s => ({P:1,H:0.5,PH:1.5,PP:2})[s] || 0;
-  const filtered = selectedWid === 'ALL' ? workers : workers.filter(w => w.id === selectedWid);
+function saveLabour(){
+  const name=(document.getElementById('labour-name').value||'').trim();
+  const role=(document.getElementById('labour-role').value||'').trim();
+  const wage=parseFloat(document.getElementById('labour-wage').value)||0;
+  const otRate=parseFloat(document.getElementById('labour-ot').value)||0;
+  const editId=document.getElementById('edit-labour-id').value;
+  if(!name){ showToast('Naam bharo!',true); return; }
+  if(wage<=0){ showToast('Daily wage bharo!',true); return; }
+  if(editId){
+    const idx=workers.findIndex(w=>w.id===editId);
+    if(idx!==-1) workers[idx]={...workers[idx],name,role:role||'Worker',wage,otRate};
+    showToast(name+' updated!');
+  } else {
+    workers.push({id:'w'+Date.now(),name,role:role||'Worker',wage,otRate});
+    showToast(name+' add ho gaya!');
+  }
+  scheduleSave();
+  showPage('labours');
+}
 
-  let totalEarnings = 0, totalAdvances = 0;
-  const workerStats = filtered.map(w => {
-    let units=0, a=0, h=0, l=0, otHrs=0, advAmt=0, pDays=0;
-    for (let d=1; d<=daysInMonth; d++) {
-      const dk = y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-      const s  = (attendance[dk]||{})[w.id] || '';
-      const u  = dayUnits(s);
-      if (u>0) pDays++;
-      else if (s==='A') a++;
-      else if (s==='L') l++;
-      if (s==='H') h++;
-      units  += u;
-      otHrs  += ((overtime[dk]||{})[w.id] || 0);
-      advAmt += ((advances[dk]||{})[w.id]  || 0);
-    }
-    const basic = Math.round(units * w.wage);
-    const otPay = Math.round(otHrs * (w.otRate||0));
-    const total = basic + otPay;
-    const net   = total - Math.round(advAmt);
-    totalEarnings += total;
-    totalAdvances += Math.round(advAmt);
-    return {w, pDays, a, h, l, otHrs, advAmt:Math.round(advAmt), basic, otPay, total, net};
-  });
+// ── LABOUR DETAIL ─────────────────────────────────────────────
+function openLabourDetail(wid){
+  detailWid=wid;
+  detailMonth=new Date();
+  showPage('detail');
+}
 
-  const netTotal = totalEarnings - totalAdvances;
-  const rpt = document.getElementById('summary-report');
+function detailChangeMonth(dir){
+  detailMonth=new Date(detailMonth.getFullYear(),detailMonth.getMonth()+dir,1);
+  renderDetail();
+}
 
-  if (workers.length === 0) {
-    rpt.innerHTML = '<div class="empty">Koi worker nahi hai.</div>';
+function renderDetail(){
+  const w=workers.find(x=>x.id===detailWid);
+  if(!w) return;
+  const m=detailMonth.getMonth(), y=detailMonth.getFullYear();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  document.getElementById('detail-name').textContent=w.name;
+  document.getElementById('detail-sub').textContent=w.role+' \u2022 \u20b9'+w.wage+'/daily';
+  document.getElementById('detail-month-lbl').textContent=fmtMonth(detailMonth);
+
+  // Stats
+  let pCount=0,aCount=0,otTotal=0,advTotal=0;
+  for(let d=1;d<=daysInMonth;d++){
+    const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const s=(attendance[dk]||{})[w.id]||'';
+    const ot=(overtime[dk]||{})[w.id]||0;
+    const adv=(advances[dk]||{})[w.id]||0;
+    if(dayUnits(s)>0) pCount++;
+    else if(s==='A') aCount++;
+    otTotal+=ot; advTotal+=adv;
+  }
+  document.getElementById('detail-stats').innerHTML=`
+    <div class="dstat"><div class="dstat-ico">&#10003;</div><div class="dstat-val p">${pCount}</div><div class="dstat-lbl">Present</div></div>
+    <div class="dstat"><div class="dstat-ico">&#10007;</div><div class="dstat-val a">${aCount}</div><div class="dstat-lbl">Absent</div></div>
+    <div class="dstat"><div class="dstat-ico">&#9200;</div><div class="dstat-val ot">${otTotal}h</div><div class="dstat-lbl">Overtime</div></div>
+    <div class="dstat"><div class="dstat-ico">&#8377;</div><div class="dstat-val adv">${Math.round(advTotal)}</div><div class="dstat-lbl">Advance</div></div>
+  `;
+
+  // Day table
+  const tbl=document.getElementById('detail-day-table');
+  let html='';
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(y,m,d);
+    const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const s=(attendance[dk]||{})[w.id]||'';
+    const adv=(advances[dk]||{})[w.id]||0;
+    const isWeekend=date.getDay()===0||date.getDay()===6;
+    const dayName=days[date.getDay()];
+    const advStr=adv>0?'&#8377;'+Math.round(adv).toLocaleString('en-IN'):'&#8377;0.00';
+    const advCls=adv>0?'day-adv has':'day-adv';
+
+    const circles=['P','A','OT','Off'].map(type=>{
+      let selCls='';
+      if(type==='P'&&(s==='P'||s==='PH'||s==='PP')) selCls=' sel';
+      else if(type==='A'&&s==='A') selCls=' sel';
+      else if(type==='OT'&&(overtime[dk]||{})[w.id]>0) selCls=' sel';
+      else if(type==='Off'&&(s==='Off'||s==='L')) selCls=' sel';
+      const lbl=type==='OT'?'OT':type;
+      return `<div class="att-circle ${type}${selCls}" onclick="openAttModalFromDetail('${w.id}','${dk}')">${lbl}</div>`;
+    }).join('');
+
+    html+=`<div class="day-row">
+      <div><div class="day-num">${String(d).padStart(2,'0')}</div><div class="day-name${isWeekend?' weekend':''}">${dayName}</div></div>
+      <div class="att-circles">${circles}</div>
+      <div class="${advCls}">${advStr}</div>
+    </div>`;
+  }
+  tbl.innerHTML=html;
+}
+
+function openAttModalFromDetail(wid,dk){
+  const w=workers.find(x=>x.id===wid);
+  if(!w) return;
+  attModalState.wid=wid; attModalState.dk=dk;
+  const [y,m,d]=dk.split('-').map(Number);
+  const dateObj=new Date(y,m-1,d);
+  document.getElementById('att-modal-title').textContent='Mark Present - '+w.name;
+  document.getElementById('att-modal-date').textContent=fmtDate(dateObj);
+  document.getElementById('modal-ot-lbl').textContent='Overtime hours (\u20b9'+(w.otRate||0)+'/hr)';
+  const curType=(attendance[dk]||{})[wid]||'P';
+  const curOt=(overtime[dk]||{})[wid]||0;
+  const curAdv=(advances[dk]||{})[wid]||0;
+  const curNote=(notes[dk]||{})[wid]||'';
+  document.getElementById('modal-ot').value=curOt;
+  document.getElementById('modal-adv').value=curAdv;
+  document.getElementById('modal-note').value=curNote;
+  selAttType(curType);
+  document.getElementById('att-modal').classList.add('open');
+}
+
+function openAttReport(wid){
+  openLabourDetail(wid);
+}
+
+function openDetailReport(){
+  const w=workers.find(x=>x.id===detailWid);
+  if(!w) return;
+  generateWorkerPDF(w);
+}
+
+// ── ATTENDANCE ────────────────────────────────────────────────
+function changeDate(dir){
+  currentDate.setDate(currentDate.getDate()+dir);
+  document.getElementById('att-date-lbl').textContent=fmtDate(currentDate);
+  renderAttendance();
+}
+
+function markAll(status){
+  const dk=dateKey(currentDate);
+  if(!attendance[dk]) attendance[dk]={};
+  workers.forEach(w=>{ attendance[dk][w.id]=status; });
+  scheduleSave();
+  renderAttendance();
+  showToast('Sab '+{P:'Present',A:'Absent',H:'Half Day'}[status]+' mark ho gaye!');
+}
+
+function renderAttendance(){
+  document.getElementById('att-date-lbl').textContent=fmtDate(currentDate);
+  const dk=dateKey(currentDate);
+  const dayAtt=attendance[dk]||{};
+  const list=document.getElementById('att-worker-list');
+  if(workers.length===0){
+    list.innerHTML='<div class="empty">Koi worker nahi hai.<br>Labours tab se add karo.</div>';
     return;
   }
-
-  rpt.innerHTML = `
-    <div class="report-head">
-      <div class="report-head-top">
-        <div class="avatar">${selectedWid==='ALL'?'LR':getInitials(filtered[0]?.name||'?')}</div>
-        <div>
-          <div style="font-weight:700;font-size:15px">${selectedWid==='ALL'?'Labor Report':'Labor Report'}</div>
-          <div class="report-sub">${months[m]} ${y} &bull; ${selectedWid==='ALL'?'All workers combined':filtered[0]?.name}</div>
-        </div>
+  const badgeLabel={P:'P',A:'A',H:'½',PH:'P+½',PP:'P+P',L:'L',Off:'Off'};
+  list.innerHTML=workers.map(w=>{
+    const s=dayAtt[w.id]||'';
+    const bl=badgeLabel[s]||'-';
+    const bc=s||'none';
+    return `<div class="att-worker-card" onclick="openAttModalFromAttTab('${w.id}')">
+      <div class="labour-avatar" style="width:40px;height:40px;font-size:13px">${getInitials(w.name)}</div>
+      <div class="labour-info">
+        <div class="labour-name">${w.name}</div>
+        <div class="labour-sub">${w.role} &bull; &#8377;${w.wage}/day</div>
       </div>
-    </div>
+      <div class="att-badge ${bc}">${bl}</div>
+    </div>`;
+  }).join('');
+}
 
+function openAttModalFromAttTab(wid){
+  const dk=dateKey(currentDate);
+  openAttModalFromDetail(wid,dk);
+}
+
+// ── ATT MODAL ─────────────────────────────────────────────────
+function selAttType(val){
+  attModalState.type=val;
+  document.querySelectorAll('.att-type-btn').forEach(b=>{
+    b.classList.toggle('sel',b.dataset.v===val);
+  });
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function closeAttModal(e){ if(e.target===document.getElementById('att-modal')) closeModal('att-modal'); }
+
+function saveAttModal(){
+  const {wid,dk,type}=attModalState;
+  if(!wid||!dk){ closeModal('att-modal'); return; }
+  if(!attendance[dk]) attendance[dk]={};
+  if(!overtime[dk]) overtime[dk]={};
+  if(!advances[dk]) advances[dk]={};
+  if(!notes[dk]) notes[dk]={};
+  attendance[dk][wid]=type;
+  overtime[dk][wid]=parseFloat(document.getElementById('modal-ot').value)||0;
+  advances[dk][wid]=parseFloat(document.getElementById('modal-adv').value)||0;
+  notes[dk][wid]=(document.getElementById('modal-note').value||'').trim();
+  scheduleSave();
+  closeModal('att-modal');
+  refreshCurrentPage();
+  showToast('Saved!');
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────
+function initUI(){
+  document.getElementById('att-date-lbl').textContent=fmtDate(currentDate);
+  cbDate=new Date(); detailMonth=new Date();
+  document.getElementById('cb-month-lbl').textContent=fmtMonth(cbDate);
+  const ms=document.getElementById('sum-month');
+  const ys=document.getElementById('sum-year');
+  const ws=document.getElementById('sum-worker');
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  ms.innerHTML=''; months.forEach((m,i)=>{ const o=document.createElement('option');o.value=i;o.textContent=m;if(i===new Date().getMonth())o.selected=true;ms.appendChild(o); });
+  ys.innerHTML=''; const yr=new Date().getFullYear();
+  for(let y=yr;y>=yr-3;y--){ const o=document.createElement('option');o.value=y;o.textContent=y;if(y===yr)o.selected=true;ys.appendChild(o); }
+  ws.innerHTML='<option value="ALL">All workers</option>';
+}
+
+function renderSummary(){
+  const ws=document.getElementById('sum-worker');
+  const m=parseInt(document.getElementById('sum-month').value);
+  const y=parseInt(document.getElementById('sum-year').value);
+  const selWid=ws?ws.value:'ALL';
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Rebuild worker dropdown
+  ws.innerHTML='<option value="ALL">All workers</option>';
+  workers.forEach(w=>{ const o=document.createElement('option');o.value=w.id;o.textContent=w.name;if(w.id===selWid)o.selected=true;ws.appendChild(o); });
+
+  const filtered=selWid==='ALL'?workers:workers.filter(w=>w.id===selWid);
+  if(filtered.length===0){ document.getElementById('sum-report').innerHTML='<div class="empty">Koi worker nahi.</div>'; return; }
+
+  let totalEarnings=0,totalAdv=0;
+  const stats=filtered.map(w=>{
+    let units=0,aCount=0,lCount=0,otHrs=0,advAmt=0,pDays=0;
+    for(let d=1;d<=daysInMonth;d++){
+      const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const s=(attendance[dk]||{})[w.id]||'';
+      const u=dayUnits(s); if(u>0) pDays++; else if(s==='A') aCount++; else if(s==='L') lCount++;
+      units+=u; otHrs+=((overtime[dk]||{})[w.id]||0); advAmt+=((advances[dk]||{})[w.id]||0);
+    }
+    const basic=Math.round(units*w.wage); const otPay=Math.round(otHrs*(w.otRate||0)); const total=basic+otPay; const net=total-Math.round(advAmt);
+    totalEarnings+=total; totalAdv+=Math.round(advAmt);
+    return {w,pDays,aCount,lCount,otHrs,advAmt:Math.round(advAmt),basic,otPay,total,net};
+  });
+  const netTotal=totalEarnings-totalAdv;
+
+  const months2=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const pillMap={P:'P',A:'A',H:'H',PH:'PH',PP:'PP',L:'L',Off:'Off'};
+
+  let html=`
+    <div class="sum-header-card">
+      <div class="sum-hc-top"><span class="sum-hc-label">Labour Report</span><span class="sum-hc-label">${monthNames[m]} ${y}</span></div>
+      <div class="sum-hc-name">${selWid==='ALL'?'All Workers':filtered[0].name}</div>
+      <div class="sum-hc-sub">${selWid==='ALL'?filtered.length+' workers combined':filtered[0].role+' \u2022 \u20b9'+filtered[0].wage+'/day'}</div>
+    </div>
     <div class="pay-card">
+      <div class="pay-card-title">Payment Summary</div>
       <div class="pay-row"><span class="pay-lbl">Total Earnings</span><span class="pay-val">&#8377;${totalEarnings.toLocaleString('en-IN')}</span></div>
-      <div class="pay-row"><span class="pay-lbl">Advance Payments</span><span class="pay-val neg">-&#8377;${totalAdvances.toLocaleString('en-IN')}</span></div>
-      <div class="pay-row pay-total pay-net"><span class="pay-lbl">Net Payment</span><span class="pay-val">&#8377;${netTotal.toLocaleString('en-IN')}</span></div>
+      <div class="pay-row"><span class="pay-lbl">Advance Payments</span><span class="pay-val neg">-&#8377;${totalAdv.toLocaleString('en-IN')}</span></div>
+      <div class="pay-row pay-net"><span class="pay-lbl">Net Payment</span><span class="pay-val pos">&#8377;${netTotal.toLocaleString('en-IN')}</span></div>
     </div>
-
-    <div class="card-title">WORKER-WISE BREAKDOWN</div>
-    ${workerStats.map(st => `
-      <div class="report-head" style="margin-bottom:10px">
-        <div class="report-head-top">
-          <div class="avatar">${getInitials(st.w.name)}</div>
-          <div>
-            <div style="font-weight:700;font-size:14px">${st.w.name}</div>
-            <div class="report-sub">${st.w.role} &bull; &#8377;${st.w.wage}/day</div>
-          </div>
+    ${stats.map(st=>`
+      <div class="pay-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div class="labour-avatar" style="width:38px;height:38px;font-size:13px;flex-shrink:0">${getInitials(st.w.name)}</div>
+          <div><div style="font-size:14px;font-weight:700">${st.w.name}</div><div style="font-size:12px;color:#888">${st.w.role} &bull; ${st.pDays}P ${st.aCount}A ${st.lCount}L</div></div>
         </div>
-        <div class="report-sub" style="margin-top:6px">
-          &bull; ${st.pDays} Present &bull; ${st.a} Absent &bull; ${st.h > 0 ? st.h + ' Half' : ''} &bull; ${st.l} Week Off
-          ${st.advAmt > 0 ? ' &bull; -&#8377;' + st.advAmt.toLocaleString('en-IN') : ''}
-        </div>
-        <div class="pay-card" style="margin:10px 0 0">
-          <div class="pay-row"><span class="pay-lbl">Basic Earnings</span><span class="pay-val">&#8377;${st.basic.toLocaleString('en-IN')}</span></div>
-          ${st.otPay>0?`<div class="pay-row"><span class="pay-lbl">Overtime</span><span class="pay-val">&#8377;${st.otPay.toLocaleString('en-IN')}</span></div>`:''}
-          ${st.advAmt>0?`<div class="pay-row"><span class="pay-lbl">Advance</span><span class="pay-val neg">-&#8377;${st.advAmt.toLocaleString('en-IN')}</span></div>`:''}
-          <div class="pay-row pay-net"><span class="pay-lbl">Net Payment</span><span class="pay-val">&#8377;${st.net.toLocaleString('en-IN')}</span></div>
-        </div>
+        <div class="pay-row"><span class="pay-lbl">Basic</span><span class="pay-val">&#8377;${st.basic.toLocaleString('en-IN')}</span></div>
+        ${st.otPay>0?`<div class="pay-row"><span class="pay-lbl">Overtime</span><span class="pay-val">&#8377;${st.otPay.toLocaleString('en-IN')}</span></div>`:''}
+        ${st.advAmt>0?`<div class="pay-row"><span class="pay-lbl">Advance</span><span class="pay-val neg">-&#8377;${st.advAmt.toLocaleString('en-IN')}</span></div>`:''}
+        <div class="pay-row pay-net"><span class="pay-lbl">Net</span><span class="pay-val pos">&#8377;${st.net.toLocaleString('en-IN')}</span></div>
       </div>
     `).join('')}
-
-    <div class="tbl-card" style="margin-top:14px">
-      <table class="tbl">
-        <thead><tr><th>Date</th><th>Status</th><th>OT Hrs</th><th>Advance</th></tr></thead>
+    <div class="sum-tbl-card">
+      <table class="sum-tbl">
+        <thead><tr><th>Date</th><th>Status</th><th>OT</th><th>Advance</th></tr></thead>
         <tbody>
-          ${(() => {
-            const rows = [];
-            for (let d=1; d<=daysInMonth; d++) {
-              const dk = y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-              filtered.forEach(w => {
-                const s   = (attendance[dk]||{})[w.id] || '';
-                const ot  = (overtime[dk]||{})[w.id]   || 0;
-                const adv = (advances[dk]||{})[w.id]   || 0;
-                if (!s && !ot && !adv) return;
-                const cls = s==='A'?'a':s==='H'?'h':s==='L'?'l':'p';
-                const lbl = {P:'P',A:'A',H:'½',PH:'P+½',PP:'P+P',L:'L'}[s]||s;
-                rows.push(`<tr>
-                  <td>${d} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]}</td>
-                  <td><span class="pill ${cls}">${lbl}</span></td>
-                  <td>${ot>0?ot+'h':'-'}</td>
-                  <td>${adv>0?'&#8377;'+adv.toLocaleString('en-IN'):'-'}</td>
-                </tr>`);
+          ${(()=>{
+            const rows=[];
+            for(let d=1;d<=daysInMonth;d++){
+              const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+              filtered.forEach(w=>{
+                const s=(attendance[dk]||{})[w.id]||'';
+                const ot=(overtime[dk]||{})[w.id]||0;
+                const adv=(advances[dk]||{})[w.id]||0;
+                if(!s&&!ot&&!adv) return;
+                const lbl={P:'P',A:'A',H:'½',PH:'P+½',PP:'P+P',L:'L',Off:'Off'}[s]||s;
+                const cls=s==='A'?'A':s==='H'?'H':s==='L'?'L':s==='Off'?'Off':'P';
+                rows.push(`<tr><td>${d} ${months2[m]}</td><td>${s?`<span class="pill ${cls}">${lbl}</span>`:'-'}</td><td>${ot>0?ot+'h':'-'}</td><td>${adv>0?'&#8377;'+Math.round(adv).toLocaleString('en-IN'):'-'}</td></tr>`);
               });
             }
-            return rows.join('') || '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px">Is mahine koi attendance nahi</td></tr>';
+            return rows.join('')||'<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px">Is mahine koi attendance nahi</td></tr>';
           })()}
         </tbody>
       </table>
     </div>
+    <button class="print-btn" onclick="window.print()">&#128221; Generate &amp; Share PDF</button>
   `;
+  document.getElementById('sum-report').innerHTML=html;
 }
 
-function renderWorkerList() {
-  const q = (document.getElementById('worker-search').value || '').toLowerCase();
-  const filtered = workers.filter(w => w.name.toLowerCase().includes(q) || w.role.toLowerCase().includes(q));
-  const list = document.getElementById('worker-list');
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty">Koi worker nahi milaa.</div>';
-    return;
-  }
-  list.innerHTML = filtered.map(w => `
-    <div class="worker-list-item">
-      <div class="avatar">${getInitials(w.name)}</div>
-      <div class="wli-info">
-        <div class="wli-name">${w.name}</div>
-        <div class="wli-sub">${w.role} &bull; &#8377;${w.wage}/day &bull; OT &#8377;${w.otRate||0}/hr</div>
-      </div>
-      <div class="wli-actions">
-        <button class="wli-del" onclick="deleteWorker('${w.id}')">Hata do</button>
-      </div>
-    </div>`).join('');
-}
+// ── CASHBOOK ──────────────────────────────────────────────────
+function cbChangeMonth(dir){ cbDate=new Date(cbDate.getFullYear(),cbDate.getMonth()+dir,1); renderCashbook(); }
+function cbMonthKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
 
-function addWorker() {
-  const name   = document.getElementById('w-name').value.trim();
-  const role   = document.getElementById('w-role').value.trim();
-  const wage   = parseFloat(document.getElementById('w-wage').value)   || 0;
-  const otRate = parseFloat(document.getElementById('w-ot').value) || 0;
-  if (!name)   { showToast('Naam bharo pehle!', true); return; }
-  if (wage<=0) { showToast('Daily wage bharo!', true); return; }
-  workers.push({ id:'w'+Date.now(), name, role:role||'Worker', wage, otRate });
-  scheduleSave();
-  ['w-name','w-role','w-wage','w-ot'].forEach(id => document.getElementById(id).value='');
-  renderWorkerList();
-  renderAttendance();
-  showToast(name + ' add ho gaya!');
-}
-
-function deleteWorker(id) {
-  const w = workers.find(x => x.id===id);
-  if (!confirm((w?w.name:'Is worker') + ' ko remove karna chahte ho?')) return;
-  workers = workers.filter(w => w.id!==id);
-  scheduleSave();
-  renderWorkerList();
-  renderAttendance();
-  showToast('Worker remove ho gaya');
-}
-
-function exportCSV() {
-  const sw = document.getElementById('sum-worker');
-  const m  = parseInt(document.getElementById('sum-month').value);
-  const y  = parseInt(document.getElementById('sum-year').value);
-  const daysInMonth = new Date(y,m+1,0).getDate();
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const selected = sw&&sw.value&&sw.value!=='ALL' ? workers.filter(w=>w.id===sw.value) : workers;
-  let csv = 'Worker Name,Role,Daily Wage';
-  for (let d=1;d<=daysInMonth;d++) csv+=','+d;
-  csv+=',Present Days,Absent,OT Hours,Advance,Total Salary,Net Payment\n';
-  selected.forEach(w => {
-    let row=`${w.name},${w.role},${w.wage}`;
-    let units=0,a=0,otHrs=0,advAmt=0,pDays=0;
-    for (let d=1;d<=daysInMonth;d++) {
-      const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-      const s=(attendance[dk]||{})[w.id]||'-';
-      row+=','+s;
-      const u=({P:1,H:0.5,PH:1.5,PP:2})[s]||0;
-      if(u>0)pDays++;
-      else if(s==='A')a++;
-      units+=u;
-      otHrs+=((overtime[dk]||{})[w.id]||0);
-      advAmt+=((advances[dk]||{})[w.id]||0);
-    }
-    const sal=Math.round(units*w.wage+otHrs*(w.otRate||0));
-    const net=sal-Math.round(advAmt);
-    row+=`,${pDays},${a},${otHrs},${Math.round(advAmt)},${sal},${net}\n`;
-    csv+=row;
-  });
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`Attendance_${months[m]}_${y}.csv`;
-  a.click();
-  showToast('CSV export ho gaya!');
-}
-
-function generateSharePDF() {
-  try { window.print(); showToast('Print dialog open — Save as PDF'); }
-  catch(e) { showToast('PDF generate nahi hua', true); }
-}
-
-function openAttModal(wid, fallbackType='P') {
-  const dk = dateKey(currentDate);
-  attModalState.wid = wid;
-  attModalState.dk  = dk;
-  const w = workers.find(x => x.id===wid);
-  document.getElementById('am-title').textContent = w ? ('Mark Present - '+w.name) : 'Mark Present';
-  document.getElementById('am-date').textContent  = fmtDate(currentDate);
-  const existingType = ((attendance[dk]||{})[wid]) || fallbackType;
-  const existingNote = ((notes[dk]||{})[wid]) || '';
-  const tl = ((timeLogs[dk]||{})[wid]) || {};
-  document.getElementById('am-in').value   = tl.in  || '';
-  document.getElementById('am-out').value  = tl.out || '';
-  document.getElementById('am-note').value = existingNote;
-  setAttType(['P','H','PH','PP'].includes(existingType) ? existingType : fallbackType);
-  document.getElementById('att-modal').classList.remove('hide');
-}
-
-function setAttType(t) {
-  attModalState.type = t;
-  ['am-t-h','am-t-p','am-t-ph','am-t-pp'].forEach(id => document.getElementById(id).classList.remove('sel'));
-  const map = {H:'am-t-h',P:'am-t-p',PH:'am-t-ph',PP:'am-t-pp'};
-  if (map[t]) document.getElementById(map[t]).classList.add('sel');
-}
-
-function hideAttModal() {
-  document.getElementById('att-modal').classList.add('hide');
-}
-
-function closeAttModal(e) { hideAttModal(); }
-
-function saveAttModal() {
-  const {wid, dk, type} = attModalState;
-  if (!wid||!dk) { hideAttModal(); return; }
-  if (!attendance[dk]) attendance[dk] = {};
-  attendance[dk][wid] = type;
-  if (!notes[dk]) notes[dk] = {};
-  notes[dk][wid] = (document.getElementById('am-note').value||'').trim();
-  if (!timeLogs[dk]) timeLogs[dk] = {};
-  timeLogs[dk][wid] = {
-    in:  document.getElementById('am-in').value  || '',
-    out: document.getElementById('am-out').value || ''
-  };
-  scheduleSave();
-  hideAttModal();
-  renderAttendance();
-  renderSummary();
-}
-
-// ── CASHBOOK ──────────────────────────────────────────────────────────────────
-
-let cashbook = []; // array of {id, type, amount, category, note, date}
-let cbDate = new Date(); // current month being viewed
-let txnModalType = 'income';
-
-function cbMonthKey(d) {
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-}
-function cbFmtMonth(d) {
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  return months[d.getMonth()] + ' ' + d.getFullYear();
-}
-
-function cbChangeMonth(dir) {
-  cbDate = new Date(cbDate.getFullYear(), cbDate.getMonth() + dir, 1);
-  renderCashbook();
-}
-
-function openTxnModal(type) {
-  txnModalType = type;
-  document.getElementById('txn-modal-title').textContent = type === 'income' ? '+ Income Add Karo' : '- Expense Add Karo';
-  document.getElementById('txn-modal-date').textContent = new Date().toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
-  document.getElementById('txn-save-btn').style.background = type === 'income' ? '#0F6E56' : '#c0392b';
-  document.getElementById('txn-amount').value = '';
-  document.getElementById('txn-note').value = '';
-  document.getElementById('txn-category').value = 'General';
-  // Set today's date as default
-  const today = new Date();
-  const dd = String(today.getDate()).padStart(2,'0');
-  const mm = String(today.getMonth()+1).padStart(2,'0');
-  const yyyy = today.getFullYear();
-  document.getElementById('txn-date').value = yyyy+'-'+mm+'-'+dd;
-  
-  // Update category options based on type
-  const cat = document.getElementById('txn-category');
-  if (type === 'income') {
-    cat.innerHTML = `<option>General</option><option>Client Payment</option><option>Advance Received</option><option>Other</option>`;
-  } else {
-    cat.innerHTML = `<option>General</option><option>Material</option><option>Labour</option><option>Transport</option><option>Food</option><option>Tools</option><option>Rent</option><option>Other</option>`;
-  }
-  document.getElementById('txn-modal').classList.remove('hide');
-  setTimeout(() => document.getElementById('txn-amount').focus(), 100);
-}
-
-function closeTxnModal(e) {
-  if (e.target === document.getElementById('txn-modal')) {
-    document.getElementById('txn-modal').classList.add('hide');
-  }
-}
-
-function saveTxn() {
-  const amount = parseFloat(document.getElementById('txn-amount').value) || 0;
-  if (amount <= 0) { showToast('Amount bharo!', true); return; }
-  const note     = document.getElementById('txn-note').value.trim();
-  const category = document.getElementById('txn-category').value;
-  const selectedDate = document.getElementById('txn-date').value;
-  // Use selected date but keep time as noon to avoid timezone issues
-  const txnDate = selectedDate ? new Date(selectedDate + 'T12:00:00') : new Date();
-  const txn = {
-    id: 't' + Date.now(),
-    type: txnModalType,
-    amount,
-    category,
-    note,
-    date: txnDate.toISOString()
-  };
-  cashbook.unshift(txn);
-  saveCashbookLocal();
-  saveCashbookToSupabase();
-  document.getElementById('txn-modal').classList.add('hide');
-  renderCashbook();
-  showToast((txnModalType === 'income' ? 'Income' : 'Expense') + ' add ho gaya!');
-}
-
-function deleteTxn(id) {
-  if (!confirm('Is transaction ko delete karna chahte ho?')) return;
-  cashbook = cashbook.filter(t => t.id !== id);
-  saveCashbookLocal();
-  saveCashbookToSupabase();
-  renderCashbook();
-  showToast('Deleted!');
-}
-
-function renderCashbook() {
-  const mk = cbMonthKey(cbDate);
-  document.getElementById('cb-month-lbl').textContent = cbFmtMonth(cbDate);
-  
-  // Filter by month
-  const monthTxns = cashbook.filter(t => {
-    if (!t.date) return false;
-    const d = new Date(t.date);
-    const tMk = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    return tMk === mk;
-  }).sort((a,b) => new Date(b.date) - new Date(a.date));
-  
-  const totalIncome  = monthTxns.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
-  const totalExpense = monthTxns.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
-  const balance      = totalIncome - totalExpense;
-  
-  document.getElementById('cb-total-income').textContent  = '₹' + Math.round(totalIncome).toLocaleString('en-IN');
-  document.getElementById('cb-total-expense').textContent = '₹' + Math.round(totalExpense).toLocaleString('en-IN');
-  const balEl = document.getElementById('cb-balance');
-  balEl.textContent = '₹' + Math.abs(Math.round(balance)).toLocaleString('en-IN');
-  balEl.style.color = balance >= 0 ? '#185FA5' : '#993C1D';
-  
-  const list = document.getElementById('cb-txn-list');
-  if (monthTxns.length === 0) {
-    list.innerHTML = '<div class="empty">Is mahine koi transaction nahi.<br>+ Income ya - Expense button se add karo.</div>';
-    return;
-  }
-  
-  list.innerHTML = monthTxns.map(t => {
-    const d = new Date(t.date);
-    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const dateStr = days[d.getDay()] + ', ' + d.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getFullYear();
-    const sign = t.type === 'income' ? '+' : '-';
-    return `<div class="cb-txn-item">
-      <div class="cb-txn-dot ${t.type}">${t.type === 'income' ? '&#8599;' : '&#8600;'}</div>
+function renderCashbook(){
+  const mk=cbMonthKey(cbDate);
+  document.getElementById('cb-month-lbl').textContent=fmtMonth(cbDate);
+  const txns=cashbook.filter(t=>{ if(!t.date) return false; const d=new Date(t.date); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')===mk; }).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const totalIn=txns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const totalEx=txns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const bal=totalIn-totalEx;
+  document.getElementById('cb-income').textContent='&#8377;'+Math.round(totalIn).toLocaleString('en-IN');
+  document.getElementById('cb-expense').textContent='&#8377;'+Math.round(totalEx).toLocaleString('en-IN');
+  const balEl=document.getElementById('cb-balance');
+  balEl.textContent=(bal<0?'-':'')+'&#8377;'+Math.abs(Math.round(bal)).toLocaleString('en-IN');
+  balEl.style.color=bal>=0?'#1565C0':'#c0392b';
+  const list=document.getElementById('cb-txn-list');
+  if(txns.length===0){ list.innerHTML='<div class="empty">Is mahine koi transaction nahi.</div>'; return; }
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const days2=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  list.innerHTML=txns.map(t=>{
+    const d=new Date(t.date);
+    const ds=days2[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()];
+    const sign=t.type==='income'?'+':'-';
+    return `<div class="cb-txn">
+      <div class="cb-txn-dot ${t.type}">${t.type==='income'?'&#8599;':'&#8600;'}</div>
       <div class="cb-txn-info">
         <div class="cb-txn-cat">${t.category}</div>
-        ${t.note ? `<div class="cb-txn-note">${t.note}</div>` : ''}
-        <div class="cb-txn-date">${dateStr}</div>
+        ${t.note?`<div class="cb-txn-note">${t.note}</div>`:''}
+        <div class="cb-txn-date">${ds}</div>
       </div>
       <div class="cb-txn-right">
         <div class="cb-txn-amt ${t.type}">${sign}&#8377;${Math.round(t.amount).toLocaleString('en-IN')}</div>
@@ -1321,172 +1125,143 @@ function renderCashbook() {
   }).join('');
 }
 
-function saveCashbookLocal() {
-  try {
-    const uid = (getSession() || {}).uid || 'anon';
-    localStorage.setItem('lcb_' + uid, JSON.stringify(cashbook));
-  } catch(e) {}
+function openTxnModal(type){
+  txnModalType=type;
+  document.getElementById('txn-modal-title').textContent=type==='income'?'+ Income Add Karo':'- Expense Add Karo';
+  document.getElementById('txn-save-btn').className=type==='income'?'btn-ok-income':'btn-ok-expense';
+  document.getElementById('txn-amount').value='';
+  document.getElementById('txn-note').value='';
+  const today=new Date();
+  document.getElementById('txn-date').value=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  const cat=document.getElementById('txn-category');
+  cat.innerHTML=type==='income'
+    ?'<option>General</option><option>Client Payment</option><option>Advance Received</option><option>Other</option>'
+    :'<option>General</option><option>Material</option><option>Labour</option><option>Transport</option><option>Food</option><option>Tools</option><option>Rent</option><option>Other</option>';
+  document.getElementById('txn-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('txn-amount').focus(),200);
 }
 
-function loadCashbookLocal() {
-  try {
-    const uid = (getSession() || {}).uid || 'anon';
-    cashbook = JSON.parse(localStorage.getItem('lcb_' + uid) || '[]');
-  } catch(e) { cashbook = []; }
+function closeTxnModalOutside(e){ if(e.target===document.getElementById('txn-modal')) closeModal('txn-modal'); }
+
+function saveTxn(){
+  const amount=parseFloat(document.getElementById('txn-amount').value)||0;
+  if(amount<=0){ showToast('Amount bharo!',true); return; }
+  const sel=document.getElementById('txn-date').value;
+  const txnDate=sel?new Date(sel+'T12:00:00'):new Date();
+  cashbook.unshift({id:'t'+Date.now(),type:txnModalType,amount,category:document.getElementById('txn-category').value,note:document.getElementById('txn-note').value.trim(),date:txnDate.toISOString()});
+  scheduleSave();
+  closeModal('txn-modal');
+  renderCashbook();
+  showToast((txnModalType==='income'?'Income':'Expense')+' add ho gaya!');
 }
 
-async function saveCashbookToSupabase() {
-  try {
-    const uid = (getSession() || {}).uid;
-    if (!uid) return;
-    await supa.from('labour_data').upsert({
-      uid,
-      workers, attendance, notes, overtime, advances,
-      time_logs: timeLogs,
-      cashbook,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'uid' });
-  } catch(e) { console.error('Cashbook save error:', e); }
+function deleteTxn(id){
+  if(!confirm('Delete karna chahte ho?')) return;
+  cashbook=cashbook.filter(t=>t.id!==id);
+  scheduleSave();
+  renderCashbook();
+  showToast('Deleted!');
 }
 
-function exportCashbookPDF() {
-  const mk = cbMonthKey(cbDate);
-  const monthName = cbFmtMonth(cbDate);
-  const s = getSession();
-  const userName = s ? s.name : '';
+// ── CSV EXPORT ────────────────────────────────────────────────
+function exportCSV(){
+  const m=parseInt(document.getElementById('sum-month').value);
+  const y=parseInt(document.getElementById('sum-year').value);
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let csv='Worker,Role,Daily Wage';
+  for(let d=1;d<=daysInMonth;d++) csv+=','+d;
+  csv+=',Present Days,Absent,OT Hours,Advance,Total Salary,Net\n';
+  workers.forEach(w=>{
+    let row=`${w.name},${w.role},${w.wage}`;
+    let units=0,a=0,ot=0,adv=0,pDays=0;
+    for(let d=1;d<=daysInMonth;d++){
+      const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const s=(attendance[dk]||{})[w.id]||'-';
+      row+=','+s;
+      const u=dayUnits(s); if(u>0) pDays++; else if(s==='A') a++;
+      units+=u; ot+=((overtime[dk]||{})[w.id]||0); adv+=((advances[dk]||{})[w.id]||0);
+    }
+    const sal=Math.round(units*w.wage+ot*(w.otRate||0)); const net=sal-Math.round(adv);
+    row+=`,${pDays},${a},${ot},${Math.round(adv)},${sal},${net}\n`;
+    csv+=row;
+  });
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Attendance_${months[m]}_${y}.csv`;
+  a.click();
+  showToast('CSV export ho gaya!');
+}
 
-  const monthTxns = cashbook.filter(t => {
-    if (!t.date) return false;
-    const d = new Date(t.date);
-    const tMk = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    return tMk === mk;
-  }).sort((a,b) => new Date(a.date) - new Date(b.date));
+// ── PDF EXPORTS ───────────────────────────────────────────────
+function generateWorkerPDF(w){
+  const m=detailMonth.getMonth(), y=detailMonth.getFullYear();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let units=0,aCount=0,otHrs=0,advAmt=0,pDays=0;
+  const rows=[];
+  for(let d=1;d<=daysInMonth;d++){
+    const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const s=(attendance[dk]||{})[w.id]||'';
+    const ot=(overtime[dk]||{})[w.id]||0;
+    const adv=(advances[dk]||{})[w.id]||0;
+    const note=(notes[dk]||{})[w.id]||'';
+    const u=dayUnits(s); if(u>0) pDays++; else if(s==='A') aCount++;
+    units+=u; otHrs+=ot; advAmt+=adv;
+    if(s||ot||adv){
+      const lbl={P:'P',A:'A',H:'½',PH:'P+½',PP:'P+P',L:'L',Off:'Off'}[s]||'-';
+      const col=s==='A'?'#c0392b':s==='L'||s==='Off'?'#8e44ad':'#0F6E56';
+      rows.push(`<tr><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb">${d} ${months[m]}</td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb"><span style="background:${col}22;color:${col};padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700">${lbl}</span></td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb">${ot>0?ot+'h':'-'}</td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb;color:#1565C0">${adv>0?'&#8377;'+Math.round(adv).toLocaleString('en-IN'):'-'}</td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb;color:#888;font-size:12px">${note||'-'}</td></tr>`);
+    }
+  }
+  const basic=Math.round(units*w.wage), otPay=Math.round(otHrs*(w.otRate||0)), total=basic+otPay, net=total-Math.round(advAmt);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Report - ${w.name}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:28px;color:#0f172a;background:#fff}.hdr{background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border-radius:12px;padding:18px 22px;margin-bottom:20px}.hdr h1{font-size:20px;font-weight:800;margin-bottom:3px}.hdr p{font-size:12px;opacity:0.85}.hdr-top{display:flex;justify-content:space-between}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.box{border:1px solid #e8e8e3;border-radius:10px;padding:12px;text-align:center}.box-val{font-size:20px;font-weight:800;margin-bottom:3px}.box-lbl{font-size:11px;color:#888}.pay{border:1px solid #e8e8e3;border-radius:12px;padding:14px;margin-bottom:20px}.pay-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f0;font-size:13px}.pay-row:last-child{border-bottom:none}.pay-net{font-size:15px;font-weight:800;color:#0F6E56}table{width:100%;border-collapse:collapse}th{background:#f0f4f8;color:#1565C0;text-align:left;padding:10px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #e8e8e3}@media print{body{padding:16px}}</style></head><body>
+  <div class="hdr"><div class="hdr-top"><div><h1>&#128196; Labour Report</h1><p>${monthNames[m]} ${y} &bull; ${w.role} &bull; &#8377;${w.wage}/day</p></div><div style="text-align:right;font-size:12px;opacity:0.85">${w.name}<br>${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div></div></div>
+  <div class="grid"><div class="box"><div class="box-val" style="color:#0F6E56">${pDays}</div><div class="box-lbl">Present</div></div><div class="box"><div class="box-val" style="color:#c0392b">${aCount}</div><div class="box-lbl">Absent</div></div><div class="box"><div class="box-val" style="color:#e67e00">${otHrs}h</div><div class="box-lbl">OT Hours</div></div><div class="box"><div class="box-val" style="color:#1565C0">&#8377;${Math.round(advAmt).toLocaleString('en-IN')}</div><div class="box-lbl">Advance</div></div></div>
+  <div class="pay"><div class="pay-row"><span>Basic Earnings</span><span>&#8377;${basic.toLocaleString('en-IN')}</span></div>${otPay>0?`<div class="pay-row"><span>Overtime</span><span>&#8377;${otPay.toLocaleString('en-IN')}</span></div>`:''}<div class="pay-row"><span>Total Earnings</span><span>&#8377;${total.toLocaleString('en-IN')}</span></div>${Math.round(advAmt)>0?`<div class="pay-row"><span>Advance</span><span style="color:#c0392b">-&#8377;${Math.round(advAmt).toLocaleString('en-IN')}</span></div>`:''}<div class="pay-row pay-net"><span>Net Payment</span><span>&#8377;${net.toLocaleString('en-IN')}</span></div></div>
+  <table><thead><tr><th>Date</th><th>Status</th><th>OT Hrs</th><th>Advance</th><th>Note</th></tr></thead><tbody>${rows.join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa">Koi attendance nahi</td></tr>'}</tbody></table>
+  </body></html>`;
+  const win=window.open('','_blank'); win.document.write(html); win.document.close(); win.onload=()=>{ win.focus(); win.print(); };
+}
 
-  const totalIncome  = monthTxns.filter(t => t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const totalExpense = monthTxns.filter(t => t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const balance = totalIncome - totalExpense;
-
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  const rows = monthTxns.map(t => {
-    const d = new Date(t.date);
-    const dateStr = String(d.getDate()).padStart(2,'0') + ' ' + months[d.getMonth()];
-    const sign = t.type === 'income' ? '+' : '-';
-    const color = t.type === 'income' ? '#0F6E56' : '#c0392b';
-    return `<tr>
-      <td style="padding:10px 12px;border-bottom:1px solid #f0f0eb;font-size:13px">${dateStr}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #f0f0eb;font-size:13px">${t.category}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #f0f0eb;font-size:13px;color:#555">${t.note||'-'}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #f0f0eb;font-size:13px;font-weight:700;color:${color};text-align:right">${sign}&#8377;${Math.round(t.amount).toLocaleString('en-IN')}</td>
-    </tr>`;
-  }).join('');
-
-  const balColor = balance >= 0 ? '#0F6E56' : '#c0392b';
-  const balSign  = balance >= 0 ? '' : '-';
-
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Cashbook - ${monthName}</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; padding: 32px; color: #1a1a1a; background: #fff; }
-  .header { background: linear-gradient(135deg, #0F6E56, #1D9E75); color: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; }
-  .header h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-  .header p { font-size: 13px; opacity: 0.85; }
-  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
-  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-  .summary-card { border: 1px solid #e8e8e3; border-radius: 12px; padding: 16px; text-align: center; }
-  .summary-val { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-  .summary-lbl { font-size: 12px; color: #888; }
-  table { width: 100%; border-collapse: collapse; }
-  thead th { background: #f7f7f2; padding: 10px 12px; font-size: 12px; font-weight: 700; color: #888; text-align: left; border-bottom: 2px solid #e8e8e3; }
-  .total-row td { padding: 12px; font-weight: 800; font-size: 14px; border-top: 2px solid #e8e8e3; background: #f7f7f2; }
-  .empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
-  .footer { margin-top: 24px; text-align: center; font-size: 11px; color: #aaa; border-top: 1px solid #f0f0eb; padding-top: 12px; }
-  @media print { body { padding: 16px; } }
-</style>
-</head>
-<body>
-  <div class="header">
-    <div class="header-top">
-      <div>
-        <h1>&#128213; Cashbook Report</h1>
-        <p>${monthName} &bull; ${userName}</p>
-      </div>
-      <div style="text-align:right;font-size:12px;opacity:0.85">
-        Generated:<br>${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
-      </div>
-    </div>
-  </div>
-
-  <div class="summary-grid">
-    <div class="summary-card">
-      <div class="summary-val" style="color:#0F6E56">&#8377;${Math.round(totalIncome).toLocaleString('en-IN')}</div>
-      <div class="summary-lbl">Total Income</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-val" style="color:#c0392b">&#8377;${Math.round(totalExpense).toLocaleString('en-IN')}</div>
-      <div class="summary-lbl">Total Expense</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-val" style="color:${balColor}">${balSign}&#8377;${Math.abs(Math.round(balance)).toLocaleString('en-IN')}</div>
-      <div class="summary-lbl">Net Balance</div>
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th style="width:80px">Date</th>
-        <th style="width:120px">Category</th>
-        <th>Note</th>
-        <th style="width:120px;text-align:right">Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${monthTxns.length > 0 ? rows : '<tr><td colspan="4" class="empty">Is mahine koi transaction nahi</td></tr>'}
-      ${monthTxns.length > 0 ? `
-      <tr class="total-row">
-        <td colspan="3">Net Balance</td>
-        <td style="text-align:right;color:${balColor}">${balSign}&#8377;${Math.abs(Math.round(balance)).toLocaleString('en-IN')}</td>
-      </tr>` : ''}
-    </tbody>
-  </table>
-
-  <div class="footer">Labour Attendance App &bull; ${monthName} Cashbook Report</div>
-</body>
-</html>`;
-
-  // Open in new window and print as PDF
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  win.onload = () => {
-    win.focus();
-    win.print();
-  };
+function exportCashbookPDF(){
+  const mk=cbMonthKey(cbDate);
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const months2=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const txns=cashbook.filter(t=>{ if(!t.date) return false; const d=new Date(t.date); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')===mk; }).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const totalIn=txns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const totalEx=txns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const bal=totalIn-totalEx;
+  const s=getSession();
+  const rows=txns.map(t=>{ const d=new Date(t.date); const ds=d.getDate()+' '+months2[d.getMonth()]; const sign=t.type==='income'?'+':'-'; const col=t.type==='income'?'#0F6E56':'#c0392b'; return `<tr><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb">${ds}</td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb">${t.category}</td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb;color:#555">${t.note||'-'}</td><td style="padding:9px 12px;border-bottom:1px solid #f0f0eb;font-weight:700;color:${col};text-align:right">${sign}&#8377;${Math.round(t.amount).toLocaleString('en-IN')}</td></tr>`; }).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cashbook - ${fmtMonth(cbDate)}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:28px;background:#fff;color:#0f172a}.hdr{background:linear-gradient(135deg,#0F6E56,#1D9E75);color:#fff;border-radius:12px;padding:18px 22px;margin-bottom:20px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}.box{border:1px solid #e8e8e3;border-radius:10px;padding:14px;text-align:center}.box-val{font-size:20px;font-weight:800;margin-bottom:3px}.box-lbl{font-size:11px;color:#888}table{width:100%;border-collapse:collapse}th{background:#f0f4f8;color:#1565C0;text-align:left;padding:10px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #e8e8e3}.footer{text-align:center;font-size:11px;color:#aaa;margin-top:20px;border-top:1px solid #f0f0eb;padding-top:12px}@media print{body{padding:16px}}</style></head><body>
+  <div class="hdr"><div style="display:flex;justify-content:space-between"><div><h1 style="font-size:20px;font-weight:800;margin-bottom:3px">&#128213; Cashbook Report</h1><p style="font-size:12px;opacity:0.85">${fmtMonth(cbDate)} &bull; ${s?s.name:''}</p></div><div style="text-align:right;font-size:12px;opacity:0.85">${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div></div></div>
+  <div class="grid"><div class="box"><div class="box-val" style="color:#0F6E56">&#8377;${Math.round(totalIn).toLocaleString('en-IN')}</div><div class="box-lbl">Total Income</div></div><div class="box"><div class="box-val" style="color:#c0392b">&#8377;${Math.round(totalEx).toLocaleString('en-IN')}</div><div class="box-lbl">Total Expense</div></div><div class="box"><div class="box-val" style="color:${bal>=0?'#1565C0':'#c0392b'}">${bal<0?'-':''}&#8377;${Math.abs(Math.round(bal)).toLocaleString('en-IN')}</div><div class="box-lbl">Net Balance</div></div></div>
+  <table><thead><tr><th>Date</th><th>Category</th><th>Note</th><th style="text-align:right">Amount</th></tr></thead><tbody>${rows||'<tr><td colspan="4" style="text-align:center;padding:20px;color:#aaa">Koi transaction nahi</td></tr>'}</tbody></table>
+  <div class="footer">Labour Attendance App &bull; ${fmtMonth(cbDate)} Cashbook Report</div>
+  </body></html>`;
+  const win=window.open('','_blank'); win.document.write(html); win.document.close(); win.onload=()=>{ win.focus(); win.print(); };
   showToast('PDF window open ho gaya!');
 }
 
-function showToast(msg, err=false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show' + (err?' err':'');
-  setTimeout(() => t.classList.remove('show'), 2500);
+// ── TOAST ─────────────────────────────────────────────────────
+function showToast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.innerHTML=msg; t.className='toast show'+(err?' err':'');
+  setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-async function init() {
-  initUI();
-  if (!isAuthed()) { showAuth(); return; }
-  const s = getSession();
-  document.getElementById('user-name').textContent = s ? (s.name+' • '+s.phone) : '';
+// ── INIT ──────────────────────────────────────────────────────
+async function init(){
+  if(!isAuthed()){ showAuth(); return; }
+  const s=getSession();
+  document.getElementById('user-name').textContent=s?s.name:'';
   await loadFromSupabase();
   document.getElementById('loading-overlay').classList.add('hide');
-  renderAttendance();
-  renderSummary();
-  renderWorkerList();
+  initUI();
+  showPage('labours');
   startAutoSync();
 }
 
