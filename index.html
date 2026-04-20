@@ -528,6 +528,38 @@ input,select,textarea{font-size:16px}
   </div>
 </div>
 
+<!-- ADVANCE MODAL -->
+<div class="modal-backdrop" id="adv-modal" onclick="closeAdvModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-hd">
+      <div>
+        <div class="modal-title">Advance Payment</div>
+        <div class="modal-date-lbl" id="adv-modal-date"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('adv-modal')">&#10005;</button>
+    </div>
+    <div class="modal-divider"></div>
+    <div style="padding:0 20px">
+      <div class="form-row" style="margin-bottom:14px">
+        <label style="font-size:12px;color:#888;font-weight:600;display:block;margin-bottom:6px">Amount (&#8377;)</label>
+        <div style="display:flex;align-items:center;border:1.5px solid #e8e8e3;border-radius:12px;background:#fafaf8;overflow:hidden">
+          <span style="padding:0 12px;font-size:18px;color:#1565C0;font-weight:700">&#8377;</span>
+          <input type="number" id="adv-amount" placeholder="e.g. 5000" inputmode="numeric" style="flex:1;border:none;background:transparent;padding:12px 12px 12px 0;font-size:18px;font-weight:700;outline:none;color:#0f172a">
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:20px">
+        <label style="font-size:12px;color:#888;font-weight:600;display:block;margin-bottom:6px">Notes</label>
+        <textarea id="adv-note" rows="2" placeholder="e.g. kharcha, emergency..." style="width:100%;padding:10px 12px;border:1.5px solid #e8e8e3;border-radius:12px;background:#fafaf8;color:#0f172a;outline:none;font-family:inherit;font-size:14px;resize:none"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;padding:0 20px">
+      <button class="btn-ghost" onclick="closeModal('adv-modal')">Cancel</button>
+      <button style="flex:1;padding:12px;border:none;border-radius:12px;background:#1565C0;color:#fff;font-weight:800;font-size:14px;cursor:pointer" onclick="saveAdvModal()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -833,21 +865,24 @@ function renderDetail(){
   document.getElementById('detail-month-lbl').textContent=fmtMonth(detailMonth);
 
   // Stats
-  let pCount=0,aCount=0,otTotal=0,advTotal=0;
+  let pUnits=0,aCount=0,otTotal=0,advTotal=0;
   for(let d=1;d<=daysInMonth;d++){
     const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const s=(attendance[dk]||{})[w.id]||'';
     const ot=(overtime[dk]||{})[w.id]||0;
     const adv=(advances[dk]||{})[w.id]||0;
-    if(dayUnits(s)>0) pCount++;
-    else if(s==='A') aCount++;
+    pUnits+=dayUnits(s);
+    if(s==='A') aCount++;
     otTotal+=ot; advTotal+=adv;
   }
+  // Show fractional present count — 1.5 stays 1.5, 2.0 shows as 2
+  const pDisplay = pUnits % 1 === 0 ? pUnits : pUnits.toFixed(1);
+  const advDisplay = Math.round(advTotal)>0 ? '₹'+Math.round(advTotal).toLocaleString('en-IN') : '₹0';
   document.getElementById('detail-stats').innerHTML=`
-    <div class="dstat"><div class="dstat-ico">&#10003;</div><div class="dstat-val p">${pCount}</div><div class="dstat-lbl">Present</div></div>
+    <div class="dstat"><div class="dstat-ico">&#10003;</div><div class="dstat-val p" style="font-size:${pUnits>=10?'18px':'20px'}">${pDisplay}</div><div class="dstat-lbl">Present</div></div>
     <div class="dstat"><div class="dstat-ico">&#10007;</div><div class="dstat-val a">${aCount}</div><div class="dstat-lbl">Absent</div></div>
     <div class="dstat"><div class="dstat-ico">&#9200;</div><div class="dstat-val ot">${otTotal}h</div><div class="dstat-lbl">Overtime</div></div>
-    <div class="dstat"><div class="dstat-ico">&#8377;</div><div class="dstat-val adv">${Math.round(advTotal)}</div><div class="dstat-lbl">Advance</div></div>
+    <div class="dstat"><div class="dstat-ico">&#8377;</div><div class="dstat-val adv" style="font-size:${advTotal>=10000?'14px':'18px'}">${advDisplay}</div><div class="dstat-lbl">Advance</div></div>
   `;
 
   // Day table
@@ -865,21 +900,61 @@ function renderDetail(){
 
     const circles=['P','A','OT','Off'].map(type=>{
       let selCls='';
-      if(type==='P'&&(s==='P'||s==='PH'||s==='PP')) selCls=' sel';
+      if(type==='P'&&(s==='P'||s==='PH'||s==='PP'||s==='H')) selCls=' sel';
       else if(type==='A'&&s==='A') selCls=' sel';
       else if(type==='OT'&&(overtime[dk]||{})[w.id]>0) selCls=' sel';
       else if(type==='Off'&&(s==='Off'||s==='L')) selCls=' sel';
       const lbl=type==='OT'?'OT':type;
-      return `<div class="att-circle ${type}${selCls}" onclick="openAttModalFromDetail('${w.id}','${dk}')">${lbl}</div>`;
+      const clickFn = type==='OT'
+        ? `openAttModalFromDetail('${w.id}','${dk}')`
+        : `openAttModalFromDetail('${w.id}','${dk}')`;
+      return `<div class="att-circle ${type}${selCls}" onclick="${clickFn}">${lbl}</div>`;
     }).join('');
+
+    const advClick = `openAdvModal('${w.id}','${dk}')`;
 
     html+=`<div class="day-row">
       <div><div class="day-num">${String(d).padStart(2,'0')}</div><div class="day-name${isWeekend?' weekend':''}">${dayName}</div></div>
       <div class="att-circles">${circles}</div>
-      <div class="${advCls}">${advStr}</div>
+      <div class="${advCls}" style="cursor:pointer;text-decoration:${adv>0?'underline':'none'}" onclick="openAdvModal('${w.id}','${dk}')">${advStr}</div>
     </div>`;
   }
   tbl.innerHTML=html;
+}
+
+let advModalState = { wid: null, dk: null };
+
+function openAdvModal(wid, dk){
+  const w = workers.find(x=>x.id===wid);
+  if(!w) return;
+  advModalState = { wid, dk };
+  const [y,m,d] = dk.split('-').map(Number);
+  const dateObj = new Date(y, m-1, d);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('adv-modal-date').textContent = d+' '+months[m-1]+' '+y;
+  const curAdv = (advances[dk]||{})[wid] || 0;
+  const curNote = (notes[dk]||{})[wid] || '';
+  document.getElementById('adv-amount').value = curAdv > 0 ? curAdv : '';
+  document.getElementById('adv-note').value = curNote;
+  document.getElementById('adv-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('adv-amount').focus(), 200);
+}
+
+function closeAdvModal(e){ if(e.target===document.getElementById('adv-modal')) closeModal('adv-modal'); }
+
+function saveAdvModal(){
+  const {wid, dk} = advModalState;
+  if(!wid||!dk){ closeModal('adv-modal'); return; }
+  const amount = parseFloat(document.getElementById('adv-amount').value) || 0;
+  const note = document.getElementById('adv-note').value.trim();
+  if(!advances[dk]) advances[dk]={};
+  if(!notes[dk]) notes[dk]={};
+  advances[dk][wid] = amount;
+  if(note) notes[dk][wid] = note;
+  scheduleSave();
+  closeModal('adv-modal');
+  renderDetail();
+  showToast(amount > 0 ? '&#8377;'+amount.toLocaleString('en-IN')+' advance saved!' : 'Advance cleared!');
 }
 
 function openAttModalFromDetail(wid,dk){
