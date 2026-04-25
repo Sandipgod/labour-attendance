@@ -156,6 +156,8 @@ input,select,textarea{font-size:16px}
 .detail-sub{font-size:12px;color:var(--brand);margin-top:3px;font-weight:600}
 .detail-edit-btn{background:rgba(0,192,127,0.12);border:1px solid rgba(0,192,127,0.3);color:var(--brand);padding:6px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.2px}
 .detail-edit-btn:hover{background:rgba(0,192,127,0.2)}
+.detail-del-btn{background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);color:var(--danger);padding:6px 12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;min-height:auto}
+.detail-del-btn:hover{background:rgba(248,81,73,0.22)}
 .detail-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px}
 .dstat{
   background:var(--surface);
@@ -494,7 +496,10 @@ input,select,textarea{font-size:16px}
           <div class="detail-name" id="detail-name">Worker</div>
           <div class="detail-sub" id="detail-sub"></div>
         </div>
-        <button class="detail-edit-btn" onclick="editCurrentLabour()">&#9998; Edit</button>
+        <div style="display:flex;gap:6px">
+        <button class="detail-edit-btn" onclick="editCurrentLabour()">✏ Edit</button>
+        <button class="detail-del-btn" onclick="deleteCurrentLabour()">🗑</button>
+      </div>
       </div>
     </div>
     <div class="detail-stats-grid" id="detail-stats"></div>
@@ -1019,6 +1024,21 @@ function showAddLabour(){
   document.getElementById('labour-form-title').textContent='Add Labour';
   document.getElementById('labour-submit-btn').textContent='Add Labour';
   showPage('add-labour');
+}
+
+function deleteCurrentLabour(){
+  const w = workers.find(x => x.id === detailWid);
+  if(!w) return;
+  if(!confirm(w.name + ' ko permanently delete karna chahte ho?\nIs worker ka saara attendance data bhi chala jayega!')) return;
+  workers = workers.filter(x => x.id !== detailWid);
+  // Remove all attendance/advances/notes/overtime for this worker
+  Object.keys(attendance).forEach(dk => { if(attendance[dk]) delete attendance[dk][detailWid]; });
+  Object.keys(advances).forEach(dk => { if(advances[dk]) delete advances[dk][detailWid]; });
+  Object.keys(notes).forEach(dk => { if(notes[dk]) delete notes[dk][detailWid]; });
+  Object.keys(overtime).forEach(dk => { if(overtime[dk]) delete overtime[dk][detailWid]; });
+  scheduleSave();
+  showToast(w.name + ' delete ho gaya!');
+  showPage('labours');
 }
 
 function editCurrentLabour(){
